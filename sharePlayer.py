@@ -4,6 +4,8 @@ import nacl.hash, nacl.encoding, nacl.secret, nacl.utils
 import readline
 import asyncio
 import logging
+import random
+import struct
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -22,16 +24,28 @@ def setupCrypto():
 
     print("Encryption Key Set")
 
-def send(buf):
+def encrypt(buf):
     """
-    Encrypt and send the buf
+    Encrypt the buf
     """
     assert type(buf) == bytes
     
     # Build a new nonce
     nonce = nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
 
-    encrypted = box.encrypt(buf, nonce)
+    return box.encrypt(buf, nonce,encoder=nacl.encoding.Base64Encoder)
+    
+def decrypt(buf):
+    """
+    Decrypt the buf. Returns None if decryption error.
+    """
+    assert type(buf) in [nacl.utils.EncryptedMessage, bytes]
+    
+    try:
+        return box.decrypt(buf,encoder=nacl.encoding.Base64Encoder)
+    except:
+        return None
+
     
 def accept_client(client_reader, client_writer):
     task = asyncio.Task(handle_client(client_reader, client_writer))
@@ -49,7 +63,27 @@ def accept_client(client_reader, client_writer):
 @asyncio.coroutine
 def handle_client(client_reader, client_writer):
     logging.debug("Handling Client")
-    client_writer.write("HELLO\n".encode())
+
+    # Generate the challenge
+    chal = random.randint(0,0xffffffff)
+
+    ## Make sure the client knows the password
+    logging.debug("Sending Challenge ... {0}".format(chal))
+    
+    # Encrypt and send the challenge
+    client_writer.write(encrypt(struct.pack("<I",chal)) + b"\n")
+
+    # See if we get the right response, timing out
+    data = yield from asyncio.wait_for(client_reader.readline(),timeout=2)
+    print("Response = {0} of type {1}".format(data,type(data)))
+    data = decrypt(data.strip())
+    resp = struct.unpack("<I",data)[0]
+
+    if resp != chal + 1:
+        logging.warn("Invalid response received. Closing connection")
+        return
+
+    logging.info("Correct response. Client connected.")
 
     while True:
         data = yield from asyncio.wait_for(client_reader.readline(),timeout=None)
@@ -88,6 +122,23 @@ def handle_client_connection(host, port):
     client_reader, client_writer = yield from asyncio.open_connection(host, port)
 
     log.info("Connected to %s %d", host, port)
+    log.debug("Getting challenge")
+    
+    chal = yield from asyncio.wait_for(client_reader.readline(),timeout=2)
+    chal = decrypt(chal.strip())
+    
+    # Make sure we could even decrypt it
+    if chal == None:
+        log.warn("Decryption is failing. Are you sure you have the right password?? Bailing.")
+        return
+
+    chal = struct.unpack("<I",chal)[0]
+    print("Chal received {0}".format(chal))
+    
+    log.debug("Sending response")
+    client_writer.write(encrypt(struct.pack("<I",chal+1)) + b"\n")
+    
+    
     
     while True:
         command = input("> ") + "\n"

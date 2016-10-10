@@ -64,6 +64,45 @@ def startServer():
     loop.run_until_complete(f)
     loop.run_forever()
 
+def make_connection(host, port):
+
+    task = asyncio.Task(handle_client_connection(host, port))
+
+    clients[task] = (host, port)
+
+    def client_done(task):
+        del clients[task]
+        log.info("Client Task Finished")
+        if len(clients) == 0:
+            log.info("clients is empty, stopping loop.")
+            loop = asyncio.get_event_loop()
+            loop.stop()
+
+    log.info("New Client Task")
+    task.add_done_callback(client_done)
+
+
+@asyncio.coroutine
+def handle_client_connection(host, port):
+    log.info("Connecting to %s %d", host, port)
+    client_reader, client_writer = yield from asyncio.open_connection(host, port)
+
+    log.info("Connected to %s %d", host, port)
+    
+    while True:
+        command = input("> ") + "\n"
+        client_writer.write(command.encode('ascii'))
+
+
+def connectClient():
+    loop = asyncio.get_event_loop()
+
+    server = input("Server IP> ")
+    port = int(input("Server port> "))
+    
+    make_connection(server,port)
+
+    loop.run_forever()
 
 def menu():
     print("Menu")
@@ -78,6 +117,9 @@ def menu():
 
         if selection == 1:
             startServer()
+
+        elif selection == 2:
+            connectClient()
         
         elif selection == 3:
             print("Exiting, bye!")

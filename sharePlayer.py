@@ -12,7 +12,8 @@ import concurrent
 import argparse
 import shutil
 import os
-
+import json
+import mplayer
 
 SERVER_HOST = "0.0.0.0"
 SERVER_PORT = 12345
@@ -21,6 +22,9 @@ clients = {} # task -> (reader, writer)
 log = logging.getLogger("sharePlayer")
 
 DIR=os.path.dirname(os.path.realpath(__file__))
+VIDEODIR = os.path.join(DIR,"Videos")
+os.makedirs(VIDEODIR,exist_ok=True)
+video = mplayer.Player()
 
 # TODO: This is set up for a single viewing party right now
 # Need to update it if we want more than 2 people viewing at the same time
@@ -106,6 +110,16 @@ def handle_client(client_reader, client_writer):
 
     logging.info("Correct response. Client connected.")
 
+    #print(type(client_reader))
+    #print(dir(client_reader))
+    host,port = client_writer.get_extra_info('peername')
+    # Sending Faux Message to our Queue
+    recvQueue.put(encrypt(json.dumps({
+        'type': 'connected',
+        'host': host,
+        'port': port,
+        'success': True})))
+    
     while True:
         try:
             data = yield from asyncio.wait_for(client_reader.readline(),timeout=0.2)
@@ -200,17 +214,60 @@ def chat():
         try:
             msg = input("Chat> ")
             if msg != "":
-                sendQueue.put(msg)
+                msg = {
+                    'type': 'chat',
+                    'msg': msg
+                }
+                sendQueue.put(json.dumps(msg))
         except:
             print("")
             return
 
 def manageRecvQueue():
+
+    # TODO: Change msg['type'] into int enum that will take up less space on the network
+
     while True:
         msg = recvQueue.get()
         msg = decrypt(msg)
-        print("Got message: {0}".format(msg.decode('ascii')))
+        msg = json.loads(msg.decode('ascii'))
+
+        # Figure out what to do with this message
+
+        if msg['type'].lower() == 'chat':
+            print("Recieved Message: {0}".format(msg['msg']))
+
+        elif msg['type'].lower() == 'connected':
+            log.info("Connection {2} from {0}:{1}".format(msg['host'],msg['port'],"success" if msg['success'] else "fail"))
+
+        elif msg['type'].lower() == 'load':
+            video.loadfile(os.path.join(VIDEODIR,msg['fileName'])
+
+
         recvQueue.task_done()
+
+
+def selectVideo():
+    global video
+
+    fileName = input("Video Name> ")
+    video.loadfile(os.path.join(VIDEODIR,fileName))
+    
+    sendQueue.put(json.dumps({
+        'type': 'load',
+        'fileName': fileName
+    }))
+
+
+def playPause():
+    global video
+
+    if video.paused:
+        video.pause()
+
+    # Sync'up location after pausing...
+    else:
+        video.pause()
 
 
 def menu():
@@ -219,11 +276,16 @@ def menu():
     print("1) Start Server")
     print("2) Connect To Server")
     print("3) Enter Chat mode")
-    print("4) Quit")
+    print("4) Select Video")
+    print("5) Play/Pause")
+    print("6) Quit")
     print("")
 
     while True:
-        selection = int(input("menu> "))
+        try:
+            selection = int(input("menu> "))
+        except:
+            continue
 
         if selection == 1:
             t = threading.Thread(target=startServer)
@@ -243,6 +305,12 @@ def menu():
             chat()
 
         elif selection == 4:
+            selectVideo()
+
+        elif selection == 5:
+            playPause()
+
+        elif selection == 6:
             print("Exiting, bye!")
             exit(0)
 

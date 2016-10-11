@@ -10,6 +10,7 @@ import threading
 import queue
 import concurrent
 import argparse
+import shutil
 
 
 SERVER_HOST = "0.0.0.0"
@@ -23,6 +24,10 @@ log = logging.getLogger("sharePlayer")
 sendQueue = queue.Queue()
 recvQueue = queue.Queue()
 
+def preChecks():
+    # Make sure mplayer is installed and in a PATH
+    if shutil.which("mplayer") == None:
+        log.error("mplayer is not found!")
 
 def setupCrypto():
     global key, box
@@ -240,6 +245,9 @@ def menu():
 
 
 def main():
+    # Pre Checks
+    preChecks()
+
     # Init things
     setupCrypto()
 

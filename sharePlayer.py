@@ -35,7 +35,7 @@ def preChecks():
 def setupCrypto():
     global key, box
 
-    password = input("Enter password: ")
+    password = input("Create Pasword For This Session: ")
     key = nacl.hash.sha256(password.encode('ascii'),encoder=nacl.encoding.RawEncoder)
     box = nacl.secret.SecretBox(key)
 
@@ -271,15 +271,4 @@ if __name__ == "__main__":
 
     main()
 
-
-"""
-key = nacl.hash.sha256(b"This is my password",encoder=nacl.encoding.RawEncoder)
-box = nacl.secret.SecretBox(key)
-
-nonce = nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
-message = b"Hello!"
-
-encrypted = box.encrypt(message, nonce)
-
-"""
 

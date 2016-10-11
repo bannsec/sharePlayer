@@ -11,6 +11,7 @@ import queue
 import concurrent
 import argparse
 import shutil
+import os
 
 
 SERVER_HOST = "0.0.0.0"
@@ -18,6 +19,8 @@ SERVER_PORT = 12345
 
 clients = {} # task -> (reader, writer)
 log = logging.getLogger("sharePlayer")
+
+DIR=os.path.dirname(os.path.realpath(__file__))
 
 # TODO: This is set up for a single viewing party right now
 # Need to update it if we want more than 2 people viewing at the same time

@@ -6,7 +6,7 @@ I hope to make this mostly OS agnostic. Here are the current dependencies
  - mplayer (http://www.mplayerhq.hu/)
   - Debian: sudo apt-get install mplayer
  - python3
-  - Debian: sudo apt-get install python3
+  - Debian: sudo apt-get install python3 python3-dev
  - mplayer.py python library
   - install from https://github.com/Owlz/mplayer.py -- Bugfixes over master branch
  - pyNaCl for crypto

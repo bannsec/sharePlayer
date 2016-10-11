@@ -9,8 +9,8 @@ import struct
 import threading
 import queue
 import concurrent
+import argparse
 
-logging.basicConfig(level=logging.DEBUG)
 
 SERVER_HOST = "0.0.0.0"
 SERVER_PORT = 12345
@@ -89,7 +89,6 @@ def handle_client(client_reader, client_writer):
 
     # See if we get the right response, timing out
     data = yield from asyncio.wait_for(client_reader.readline(),timeout=2)
-    print("Response = {0} of type {1}".format(data,type(data)))
     data = decrypt(data.strip())
     resp = struct.unpack("<I",data)[0]
 
@@ -103,6 +102,7 @@ def handle_client(client_reader, client_writer):
         try:
             data = yield from asyncio.wait_for(client_reader.readline(),timeout=0.2)
             recvQueue.put(data)
+
         except concurrent.futures._base.TimeoutError:
             pass
 
@@ -252,6 +252,13 @@ def main():
     menu()
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--debug", help="Including debugging output",
+                        action="store_true")
+    args = parser.parse_args()
+    if args.debug:
+        logging.basicConfig(level=logging.DEBUG)
+
     main()
 
 

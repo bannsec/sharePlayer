@@ -241,7 +241,7 @@ def manageRecvQueue():
             log.info("Connection {2} from {0}:{1}".format(msg['host'],msg['port'],"success" if msg['success'] else "fail"))
 
         elif msg['type'].lower() == 'load':
-            video.loadfile(os.path.join(VIDEODIR,msg['fileName'])
+            video.loadfile(os.path.join(VIDEODIR,msg['fileName']))
 
 
         recvQueue.task_done()

@@ -243,6 +243,9 @@ def manageRecvQueue():
         elif msg['type'].lower() == 'load':
             video.loadfile(os.path.join(VIDEODIR,msg['fileName']))
 
+        elif msg['type'].lower() == 'pause':
+            video.pause()
+
 
         recvQueue.task_done()
 
@@ -262,12 +265,20 @@ def selectVideo():
 def playPause():
     global video
 
+    video.pause()
+
+    sendQueue.put(json.dumps({
+        'type': 'pause'
+        }))
+
     if video.paused:
-        video.pause()
+        #video.pause()
+        pass
 
     # Sync'up location after pausing...
     else:
-        video.pause()
+        #video.pause()
+        pass
 
 
 def menu():

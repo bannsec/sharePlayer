@@ -157,7 +157,6 @@ def handle_client_connection(host, port):
         return
 
     chal = struct.unpack("<I",chal)[0]
-    print("Chal received {0}".format(chal))
     
     log.debug("Sending response")
     client_writer.write(encrypt(struct.pack("<I",chal+1)) + b"\n")

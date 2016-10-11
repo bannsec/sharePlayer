@@ -6,6 +6,9 @@ import asyncio
 import logging
 import random
 import struct
+import threading
+import queue
+import concurrent
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -14,6 +17,12 @@ SERVER_PORT = 12345
 
 clients = {} # task -> (reader, writer)
 log = logging.getLogger("sharePlayer")
+
+# TODO: This is set up for a single viewing party right now
+# Need to update it if we want more than 2 people viewing at the same time
+sendQueue = queue.Queue()
+recvQueue = queue.Queue()
+
 
 def setupCrypto():
     global key, box
@@ -28,7 +37,11 @@ def encrypt(buf):
     """
     Encrypt the buf
     """
-    assert type(buf) == bytes
+    assert type(buf) in [bytes,str]
+
+    # Assuming encoding...
+    if type(buf) is str:
+        buf = buf.encode('ascii')
     
     # Build a new nonce
     nonce = nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
@@ -60,6 +73,7 @@ def accept_client(client_reader, client_writer):
     task.add_done_callback(client_done)
 
 
+
 @asyncio.coroutine
 def handle_client(client_reader, client_writer):
     logging.debug("Handling Client")
@@ -86,14 +100,24 @@ def handle_client(client_reader, client_writer):
     logging.info("Correct response. Client connected.")
 
     while True:
-        data = yield from asyncio.wait_for(client_reader.readline(),timeout=None)
-        print("Got {0}".format(data))
+        try:
+            data = yield from asyncio.wait_for(client_reader.readline(),timeout=0.2)
+            recvQueue.put(data)
+        except concurrent.futures._base.TimeoutError:
+            pass
+
+        try:            
+            send = encrypt(sendQueue.get_nowait()) + b"\n"
+            client_writer.write(send)
+            sendQueue.task_done()
+        except queue.Empty:
+            pass
 
 
 def startServer():
     print("Starting server on {0}:{1}".format(SERVER_HOST,SERVER_PORT))
-    
-    loop = asyncio.get_event_loop()
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
     f = asyncio.start_server(accept_client, host=SERVER_HOST, port=SERVER_PORT)
     loop.run_until_complete(f)
     loop.run_forever()
@@ -138,49 +162,98 @@ def handle_client_connection(host, port):
     log.debug("Sending response")
     client_writer.write(encrypt(struct.pack("<I",chal+1)) + b"\n")
     
-    
-    
     while True:
-        command = input("> ") + "\n"
-        client_writer.write(command.encode('ascii'))
+        # Try to read data
+        try:
+            data = yield from asyncio.wait_for(client_reader.readline(),timeout=0.2)
+            recvQueue.put(data)
+        except concurrent.futures._base.TimeoutError:
+            pass
+
+        try:
+            # See if there's something to send
+            command = sendQueue.get_nowait()
+            client_writer.write(encrypt(command) + b"\n")
+            sendQueue.task_done()
+        except queue.Empty:
+            # Not a big deal if there isn't anything to send
+            pass
+            
 
 
-def connectClient():
-    loop = asyncio.get_event_loop()
-
-    server = input("Server IP> ")
-    port = int(input("Server port> "))
-    
+def connectClient(server,port):
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
     make_connection(server,port)
-
     loop.run_forever()
+
+
+def chat():
+    while True:
+        try:
+            msg = input("Chat> ")
+            if msg != "":
+                sendQueue.put(msg)
+        except:
+            print("")
+            return
+
+def manageRecvQueue():
+    while True:
+        msg = recvQueue.get()
+        msg = decrypt(msg)
+        print("Got message: {0}".format(msg.decode('ascii')))
+        recvQueue.task_done()
+
 
 def menu():
     print("Menu")
     print("====")
     print("1) Start Server")
     print("2) Connect To Server")
-    print("3) Quit")
+    print("3) Enter Chat mode")
+    print("4) Quit")
     print("")
 
     while True:
-        selection = int(input("> "))
+        selection = int(input("menu> "))
 
         if selection == 1:
-            startServer()
+            t = threading.Thread(target=startServer)
+            t.daemon = True
+            t.start()
+            #startServer()
 
         elif selection == 2:
-            connectClient()
+            server = input("Server Host> ")
+            port = int(input("Server port> "))
+            t = threading.Thread(target=connectClient,args=(server,port))
+            t.daemon = True
+            t.start()
+            #connectClient(server,port)
         
         elif selection == 3:
+            chat()
+
+        elif selection == 4:
             print("Exiting, bye!")
             exit(0)
 
 
-# Init things
-setupCrypto()
+def main():
+    # Init things
+    setupCrypto()
 
-menu()
+    # Spawn off some handlers
+    t = threading.Thread(target=manageRecvQueue)
+    t.daemon = True
+    t.start()
+
+    menu()
+
+if __name__ == "__main__":
+    main()
+
 
 """
 key = nacl.hash.sha256(b"This is my password",encoder=nacl.encoding.RawEncoder)

@@ -14,6 +14,7 @@ import shutil
 import os
 import json
 import mplayer
+import subprocess
 
 SERVER_HOST = "0.0.0.0"
 SERVER_PORT = 12345
@@ -235,7 +236,8 @@ def manageRecvQueue():
         # Figure out what to do with this message
 
         if msg['type'].lower() == 'chat':
-            print("Recieved Message: {0}".format(msg['msg']))
+            subprocess.check_output(["mplayer",os.path.join(DIR,"notifications","just-like-that.mp3")],stderr=subprocess.STDOUT)
+            print("\nRecieved Message: {0}".format(msg['msg']))
 
         elif msg['type'].lower() == 'connected':
             log.info("Connection {2} from {0}:{1}".format(msg['host'],msg['port'],"success" if msg['success'] else "fail"))
@@ -302,7 +304,6 @@ def menu():
             t = threading.Thread(target=startServer)
             t.daemon = True
             t.start()
-            #startServer()
 
         elif selection == 2:
             server = input("Server Host> ")
@@ -310,7 +311,6 @@ def menu():
             t = threading.Thread(target=connectClient,args=(server,port))
             t.daemon = True
             t.start()
-            #connectClient(server,port)
         
         elif selection == 3:
             chat()

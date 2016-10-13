@@ -14,6 +14,6 @@ I hope to make this mostly OS agnostic. Here are the current dependencies
 
 
 # Security Considerations
-For now, I haven't added much security. This means, if you want to play with it, you'll want to ensure you're restricting who can connect to your port via firewall or routing rules.
+This app has been outfitted with authenticating encryption. The other end needs to know the password ahead of time to be able to connect. Choose a strong password if you're concerned about others joining this session.
 
 

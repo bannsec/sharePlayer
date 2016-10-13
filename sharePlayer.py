@@ -15,6 +15,7 @@ import os
 import json
 import mplayer
 import subprocess
+import base64
 
 SERVER_HOST = "0.0.0.0"
 SERVER_PORT = 12345
@@ -228,7 +229,7 @@ def printChat():
     cls()
 
     # Print the messages we have, padding if need be
-    msgs = chatMsgs[:lines-2] if len(chatMsgs) > lines-2 else (['']*(lines - len(chatMsgs) - 2) + chatMsgs)
+    msgs = chatMsgs[:lines-3] if len(chatMsgs) > lines-3 else (['']*(lines - len(chatMsgs) - 3) + chatMsgs)
 
     for msg in msgs[::-1]:
         print(msg)
@@ -258,6 +259,29 @@ def chat():
             print("")
             return
 
+def sendFile(fileName):
+    # Path of file to send
+    filePath = os.path.abspath(os.path.join(VIDEODIR,fileName))
+
+    # No traversal please...
+    if not filePath.startswith(VIDEODIR):
+        log.error("You're trying to send something that isn't in your Video directory. Bailing.")
+        return
+
+    with open(filePath,"rb") as f:
+        data = f.read(1024)
+        
+        # So long as we're reading data, send it
+        while data != b"":
+
+            # TODO: Rework this "protocol". Right now, it's just going to write files, because... #YOLO
+            sendQueue.put(json.dumps({
+                'type': 'fileTransfer',
+                'fileName': fileName,
+                'data': data.decode('iso-8859-1') # remember to decode after we get it!
+            }))
+
+
 def manageRecvQueue():
 
     # TODO: Change msg['type'] into int enum that will take up less space on the network
@@ -272,7 +296,7 @@ def manageRecvQueue():
 
         if msg['type'].lower() == 'chat':
             subprocess.check_output(["mplayer",os.path.join(DIR,"notifications","just-like-that.mp3")],stderr=subprocess.STDOUT)
-            chatMsgs.insert(0,msg['msg'])
+            chatMsgs.insert(0,">>> " + msg['msg'])
             printChat()
             #print("\nRecieved Message: {0}".format(msg['msg']))
 
@@ -284,7 +308,6 @@ def manageRecvQueue():
 
         elif msg['type'].lower() == 'pause':
             video.pause()
-
 
         recvQueue.task_done()
 
@@ -326,9 +349,10 @@ def menu():
     print("1) Start Server")
     print("2) Connect To Server")
     print("3) Enter Chat mode")
-    print("4) Select Video")
-    print("5) Play/Pause")
-    print("6) Quit")
+    print("4) Send Video")
+    print("5) Select Video")
+    print("6) Play/Pause")
+    print("7) Quit")
     print("")
 
     while True:
@@ -353,12 +377,18 @@ def menu():
             chat()
 
         elif selection == 4:
-            selectVideo()
+            fileName = input("Name of file to send> ")
+            t = threading.Thread(target=sendFile,args=(fileName,))
+            t.daemon = True
+            t.start()
 
         elif selection == 5:
-            playPause()
+            selectVideo()
 
         elif selection == 6:
+            playPause()
+
+        elif selection == 7:
             print("Exiting, bye!")
             exit(0)
 

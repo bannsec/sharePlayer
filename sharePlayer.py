@@ -32,6 +32,9 @@ video = mplayer.Player()
 sendQueue = queue.Queue()
 recvQueue = queue.Queue()
 
+# Store the chat messages
+chatMsgs = []
+
 def preChecks():
     # Make sure mplayer is installed and in a PATH
     if shutil.which("mplayer") == None:
@@ -210,16 +213,47 @@ def connectClient(server,port):
     loop.run_forever()
 
 
+def cls():
+    os.system('cls' if os.name=='nt' else 'clear')
+
+def printChat():
+    # TODO: There's a race condition in here both on adding messages and printing. This really needs to be controlled through it's own class
+    global chatMsgs
+
+    # Grab the current dimentions
+    lines = shutil.get_terminal_size().lines
+    columns = shutil.get_terminal_size().columns
+
+    # Clear the screen
+    cls()
+
+    # Print the messages we have, padding if need be
+    msgs = chatMsgs[:lines-2] if len(chatMsgs) > lines-2 else (['']*(lines - len(chatMsgs) - 2) + chatMsgs)
+
+    for msg in msgs[::-1]:
+        print(msg)
+    
+
 def chat():
+    global chatMsgs
+
     while True:
+        printChat()
+
         try:
             msg = input("Chat> ")
             if msg != "":
+
+                # Add it to our own chat
+                chatMsgs.insert(0,msg)
+
+                # Send it off to our connected peers
                 msg = {
                     'type': 'chat',
                     'msg': msg
                 }
                 sendQueue.put(json.dumps(msg))
+
         except:
             print("")
             return
@@ -227,6 +261,7 @@ def chat():
 def manageRecvQueue():
 
     # TODO: Change msg['type'] into int enum that will take up less space on the network
+    global chatMsgs
 
     while True:
         msg = recvQueue.get()
@@ -237,7 +272,9 @@ def manageRecvQueue():
 
         if msg['type'].lower() == 'chat':
             subprocess.check_output(["mplayer",os.path.join(DIR,"notifications","just-like-that.mp3")],stderr=subprocess.STDOUT)
-            print("\nRecieved Message: {0}".format(msg['msg']))
+            chatMsgs.insert(0,msg['msg'])
+            printChat()
+            #print("\nRecieved Message: {0}".format(msg['msg']))
 
         elif msg['type'].lower() == 'connected':
             log.info("Connection {2} from {0}:{1}".format(msg['host'],msg['port'],"success" if msg['success'] else "fail"))

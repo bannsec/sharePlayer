@@ -399,6 +399,7 @@ def playPause():
             'type': 'time_pos',
             'pos': video.time_pos
         }))
+        video.time_pos = video.time_pos
 
 
 

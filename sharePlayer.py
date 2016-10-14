@@ -301,7 +301,7 @@ def sendFile(fileName):
             sendQueue.put(dill.dumps({
                 'type': 'fileTransfer',
                 'fileName': fileName,
-                'data': data.decode('iso-8859-1') # remember to decode after we get it!
+                'data': data
             }))
 
 

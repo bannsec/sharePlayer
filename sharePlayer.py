@@ -366,6 +366,9 @@ def manageRecvQueue():
             with open(filePath,"ab") as f:
                 f.write(msg['data'])
 
+        elif msg['type'].lower() == 'time_pos':
+            video.time_pos = msg['pos']
+
         recvQueue.task_done()
 
 
@@ -390,14 +393,13 @@ def playPause():
         'type': 'pause'
         }))
 
+    # If we just pased it, sync everyone together
     if video.paused:
-        #video.pause()
-        pass
+        sendQueue.put(dill.dumps({
+            'type': 'time_pos',
+            'pos': video.time_pos
+        }))
 
-    # Sync'up location after pausing...
-    else:
-        #video.pause()
-        pass
 
 
 def menu():

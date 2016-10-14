@@ -17,6 +17,9 @@ import mplayer
 import subprocess
 import base64
 
+# Custom pyNaCl encoder
+from Base85Encoder import Base85Encoder
+
 SERVER_HOST = "0.0.0.0"
 SERVER_PORT = 12345
 
@@ -65,7 +68,7 @@ def encrypt(buf):
     # Build a new nonce
     nonce = nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
 
-    return box.encrypt(buf, nonce,encoder=nacl.encoding.Base64Encoder)
+    return box.encrypt(buf, nonce,encoder=Base85Encoder)
     
 def decrypt(buf):
     """
@@ -74,7 +77,7 @@ def decrypt(buf):
     assert type(buf) in [nacl.utils.EncryptedMessage, bytes]
     
     try:
-        return box.decrypt(buf,encoder=nacl.encoding.Base64Encoder)
+        return box.decrypt(buf,encoder=Base85Encoder)
     except:
         return None
 
@@ -137,6 +140,7 @@ def handle_client(client_reader, client_writer):
 
         try:            
             send = encrypt(sendQueue.get_nowait()) + b"\n"
+            print("length = {0}".format(len(send)))
             client_writer.write(send)
             sendQueue.task_done()
         except queue.Empty:

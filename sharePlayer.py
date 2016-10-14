@@ -30,7 +30,7 @@ video = mplayer.Player()
 
 # TODO: This is set up for a single viewing party right now
 # Need to update it if we want more than 2 people viewing at the same time
-sendQueue = queue.Queue()
+sendQueue = queue.Queue(maxsize=100)
 recvQueue = queue.Queue()
 
 # Store the chat messages
@@ -269,7 +269,7 @@ def sendFile(fileName):
         return
 
     with open(filePath,"rb") as f:
-        data = f.read(1024)
+        data = f.read(4096)
         
         # So long as we're reading data, send it
         while data != b"":
@@ -298,7 +298,6 @@ def manageRecvQueue():
             subprocess.check_output(["mplayer",os.path.join(DIR,"notifications","just-like-that.mp3")],stderr=subprocess.STDOUT)
             chatMsgs.insert(0,">>> " + msg['msg'])
             printChat()
-            #print("\nRecieved Message: {0}".format(msg['msg']))
 
         elif msg['type'].lower() == 'connected':
             log.info("Connection {2} from {0}:{1}".format(msg['host'],msg['port'],"success" if msg['success'] else "fail"))
@@ -308,6 +307,20 @@ def manageRecvQueue():
 
         elif msg['type'].lower() == 'pause':
             video.pause()
+
+        elif msg['type'].lower() == "fileTransfer":
+            # TODO: Opening and closing the file this many times is VERY inefficient
+            # TODO: Check if user wants to accept the file
+
+            # Sanity check
+            filePath = os.path.abspath(os.path.join(VIDEODIR,msg['fileName']))
+            if not filePath.startswith(VIDEODIR):
+                log.error("Someone attempted to write to a file outside of your Video directory! They are not your friend. :-(\n\t{0}".format(filePath))
+                continue
+
+            # TODO: Assumption we'll always append. Handle initial write better
+            with open(msg['fileName'],"ab") as f:
+                f.write(msg['data'].encode(('iso-8859-1')))
 
         recvQueue.task_done()
 

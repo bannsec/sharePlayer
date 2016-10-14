@@ -20,6 +20,8 @@ import base64
 SERVER_HOST = "0.0.0.0"
 SERVER_PORT = 12345
 
+LIMIT=8*1024*1024 # streams read and write buffer size
+
 clients = {} # task -> (reader, writer)
 log = logging.getLogger("sharePlayer")
 
@@ -145,7 +147,7 @@ def startServer():
     print("Starting server on {0}:{1}".format(SERVER_HOST,SERVER_PORT))
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    f = asyncio.start_server(accept_client, host=SERVER_HOST, port=SERVER_PORT,limit=4*1024*1024)
+    f = asyncio.start_server(accept_client, host=SERVER_HOST, port=SERVER_PORT,limit=LIMIT)
     loop.run_until_complete(f)
     loop.run_forever()
 
@@ -170,7 +172,7 @@ def make_connection(host, port):
 @asyncio.coroutine
 def handle_client_connection(host, port):
     log.info("Connecting to %s %d", host, port)
-    client_reader, client_writer = yield from asyncio.open_connection(host, port,limit=4*1024*1024)
+    client_reader, client_writer = yield from asyncio.open_connection(host, port,limit=LIMIT)
 
     log.info("Connected to %s %d", host, port)
     log.debug("Getting challenge")

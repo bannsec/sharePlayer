@@ -24,6 +24,7 @@ SERVER_HOST = "0.0.0.0"
 SERVER_PORT = 12345
 
 LIMIT=8*1024*1024 # streams read and write buffer size
+SENDSIZE=4*1024*1024 # The size of chunks of data to use when sending a file
 
 clients = {} # task -> (reader, writer)
 log = logging.getLogger("sharePlayer")
@@ -292,7 +293,7 @@ def sendFile(fileName):
         return
 
     with open(filePath,"rb") as f:
-        data = f.read(4*1024*1024) # 4MB at a time
+        data = f.read(SENDSIZE) # 4MB at a time
         
         # So long as we're reading data, send it
         while data != b"":
@@ -303,6 +304,8 @@ def sendFile(fileName):
                 'fileName': fileName,
                 'data': data
             }))
+
+            data = f.read(SENDSIZE)
 
 
 def manageRecvQueue():

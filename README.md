@@ -13,6 +13,8 @@ I hope to make this mostly OS agnostic. Here are the current dependencies
   - pip install pynacl
  * dill
   * pip install dill
+ * progressbar2
+  * pip install progressbar2
 
 
 # Security Considerations

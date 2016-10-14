@@ -16,6 +16,8 @@ import mplayer
 import subprocess
 import base64
 import dill
+import progressbar
+
 
 # Custom pyNaCl encoder
 from Base85Encoder import Base85Encoder
@@ -23,7 +25,7 @@ from Base85Encoder import Base85Encoder
 SERVER_HOST = "0.0.0.0"
 SERVER_PORT = 12345
 
-LIMIT=8*1024*1024 # streams read and write buffer size
+LIMIT=8*1024*1024 # streams read and write buffer size, might not actually need this anymore...
 SENDSIZE=4*1024*1024 # The size of chunks of data to use when sending a file
 
 clients = {} # task -> (reader, writer)
@@ -292,11 +294,24 @@ def sendFile(fileName):
         log.error("You're trying to send something that isn't in your Video directory. Bailing.")
         return
 
+    # Figure out the file size
+    fileSize = os.path.getsize(filePath)
+    print("File size is {0}".format(fileSize))
+
+    # Progress bar to monitor progress
+    bar = progressbar.ProgressBar(widgets=[
+        ' [', progressbar.Percentage(), '] ',
+        progressbar.Bar(),
+        ' (', progressbar.ETA(), ') ',
+    ],max_value=fileSize)
+
     with open(filePath,"rb") as f:
         data = f.read(SENDSIZE) # 4MB at a time
+        totalRead = len(data)
         
         # So long as we're reading data, send it
         while data != b"":
+            bar.update(totalRead)
 
             # TODO: Rework this "protocol". Right now, it's just going to write files, because... #YOLO
             sendQueue.put(dill.dumps({
@@ -306,6 +321,9 @@ def sendFile(fileName):
             }))
 
             data = f.read(SENDSIZE)
+            totalRead += len(data)
+        
+    bar.finish()
 
 
 def manageRecvQueue():

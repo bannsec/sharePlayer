@@ -145,7 +145,7 @@ def startServer():
     print("Starting server on {0}:{1}".format(SERVER_HOST,SERVER_PORT))
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    f = asyncio.start_server(accept_client, host=SERVER_HOST, port=SERVER_PORT)
+    f = asyncio.start_server(accept_client, host=SERVER_HOST, port=SERVER_PORT,limit=4*1024*1024)
     loop.run_until_complete(f)
     loop.run_forever()
 
@@ -170,7 +170,7 @@ def make_connection(host, port):
 @asyncio.coroutine
 def handle_client_connection(host, port):
     log.info("Connecting to %s %d", host, port)
-    client_reader, client_writer = yield from asyncio.open_connection(host, port)
+    client_reader, client_writer = yield from asyncio.open_connection(host, port,limit=4*1024*1024)
 
     log.info("Connected to %s %d", host, port)
     log.debug("Getting challenge")
@@ -269,7 +269,7 @@ def sendFile(fileName):
         return
 
     with open(filePath,"rb") as f:
-        data = f.read(4096)
+        data = f.read(4*1024*1024) # 4MB at a time
         
         # So long as we're reading data, send it
         while data != b"":
@@ -308,7 +308,7 @@ def manageRecvQueue():
         elif msg['type'].lower() == 'pause':
             video.pause()
 
-        elif msg['type'].lower() == "fileTransfer":
+        elif msg['type'].lower() == "filetransfer":
             # TODO: Opening and closing the file this many times is VERY inefficient
             # TODO: Check if user wants to accept the file
 
@@ -319,7 +319,7 @@ def manageRecvQueue():
                 continue
 
             # TODO: Assumption we'll always append. Handle initial write better
-            with open(msg['fileName'],"ab") as f:
+            with open(filePath,"ab") as f:
                 f.write(msg['data'].encode(('iso-8859-1')))
 
         recvQueue.task_done()

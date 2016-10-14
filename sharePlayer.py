@@ -138,7 +138,7 @@ def handle_client(client_reader, client_writer):
             size = yield from asyncio.wait_for(client_reader.readexactly(4),timeout=0.2)
             # If we get a size field, we know we're expecting data so let's get it
             size = struct.unpack("<I",size)[0]
-            data = yield from asyncio.wait_for(client_reader.readexactly(size),timeout=0.2)
+            data = yield from asyncio.wait_for(client_reader.readexactly(size))
             recvQueue.put(data)
 
         except concurrent.futures._base.TimeoutError:
@@ -211,7 +211,7 @@ def handle_client_connection(host, port):
         try:
             size = yield from asyncio.wait_for(client_reader.readexactly(4),timeout=0.2)
             size = struct.unpack("<I",size)[0]
-            data = yield from asyncio.wait_for(client_reader.readexactly(size),timeout=0.2)
+            data = yield from asyncio.wait_for(client_reader.readexactly(size))
             recvQueue.put(data)
         except concurrent.futures._base.TimeoutError:
             pass

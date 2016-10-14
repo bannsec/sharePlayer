@@ -12,10 +12,10 @@ import concurrent
 import argparse
 import shutil
 import os
-import json
 import mplayer
 import subprocess
 import base64
+import dill
 
 # Custom pyNaCl encoder
 from Base85Encoder import Base85Encoder
@@ -68,7 +68,7 @@ def encrypt(buf):
     # Build a new nonce
     nonce = nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
 
-    return box.encrypt(buf, nonce,encoder=Base85Encoder)
+    return box.encrypt(buf, nonce)#,encoder=Base85Encoder)
     
 def decrypt(buf):
     """
@@ -77,7 +77,7 @@ def decrypt(buf):
     assert type(buf) in [nacl.utils.EncryptedMessage, bytes]
     
     try:
-        return box.decrypt(buf,encoder=Base85Encoder)
+        return box.decrypt(buf)# ,encoder=Base85Encoder)
     except:
         return None
 
@@ -107,11 +107,15 @@ def handle_client(client_reader, client_writer):
     logging.debug("Sending Challenge ... {0}".format(chal))
     
     # Encrypt and send the challenge
-    client_writer.write(encrypt(struct.pack("<I",chal)) + b"\n")
+    chal_enc = encrypt(struct.pack("<I",chal))
+    client_writer.write(struct.pack("<I",len(chal_enc)))
+    client_writer.write(chal_enc)
 
     # See if we get the right response, timing out
-    data = yield from asyncio.wait_for(client_reader.readline(),timeout=2)
-    data = decrypt(data.strip())
+    size = yield from asyncio.wait_for(client_reader.readexactly(4),timeout=2)
+    size = struct.unpack("<I",size)[0]
+    data = yield from asyncio.wait_for(client_reader.readexactly(size),timeout=2)
+    data = decrypt(data)
     resp = struct.unpack("<I",data)[0]
 
     if resp != chal + 1:
@@ -120,11 +124,9 @@ def handle_client(client_reader, client_writer):
 
     logging.info("Correct response. Client connected.")
 
-    #print(type(client_reader))
-    #print(dir(client_reader))
     host,port = client_writer.get_extra_info('peername')
     # Sending Faux Message to our Queue
-    recvQueue.put(encrypt(json.dumps({
+    recvQueue.put(encrypt(dill.dumps({
         'type': 'connected',
         'host': host,
         'port': port,
@@ -132,15 +134,21 @@ def handle_client(client_reader, client_writer):
     
     while True:
         try:
-            data = yield from asyncio.wait_for(client_reader.readline(),timeout=0.2)
+            # Wait for a size field
+            size = yield from asyncio.wait_for(client_reader.readexactly(4),timeout=0.2)
+            # If we get a size field, we know we're expecting data so let's get it
+            size = struct.unpack("<I",size)[0]
+            data = yield from asyncio.wait_for(client_reader.readexactly(size),timeout=0.2)
             recvQueue.put(data)
 
         except concurrent.futures._base.TimeoutError:
             pass
 
         try:            
-            send = encrypt(sendQueue.get_nowait()) + b"\n"
-            print("length = {0}".format(len(send)))
+            send = encrypt(sendQueue.get_nowait())
+            # First send the size of this message
+            client_writer.write(struct.pack("<I",len(send)))
+            # Then send the message itself
             client_writer.write(send)
             sendQueue.task_done()
         except queue.Empty:
@@ -181,8 +189,10 @@ def handle_client_connection(host, port):
     log.info("Connected to %s %d", host, port)
     log.debug("Getting challenge")
     
-    chal = yield from asyncio.wait_for(client_reader.readline(),timeout=2)
-    chal = decrypt(chal.strip())
+    size = yield from asyncio.wait_for(client_reader.readexactly(4),timeout=2)
+    size = struct.unpack("<I",size)[0]
+    chal = yield from asyncio.wait_for(client_reader.readexactly(size),timeout=2)
+    chal = decrypt(chal)
     
     # Make sure we could even decrypt it
     if chal == None:
@@ -192,20 +202,27 @@ def handle_client_connection(host, port):
     chal = struct.unpack("<I",chal)[0]
     
     log.debug("Sending response")
-    client_writer.write(encrypt(struct.pack("<I",chal+1)) + b"\n")
+    resp_enc = encrypt(struct.pack("<I",chal+1))
+    client_writer.write(struct.pack("<I",len(resp_enc)))
+    client_writer.write(resp_enc)
     
     while True:
         # Try to read data
         try:
-            data = yield from asyncio.wait_for(client_reader.readline(),timeout=0.2)
+            size = yield from asyncio.wait_for(client_reader.readexactly(4),timeout=0.2)
+            size = struct.unpack("<I",size)[0]
+            data = yield from asyncio.wait_for(client_reader.readexactly(size),timeout=0.2)
             recvQueue.put(data)
         except concurrent.futures._base.TimeoutError:
             pass
 
         try:
             # See if there's something to send
-            command = sendQueue.get_nowait()
-            client_writer.write(encrypt(command) + b"\n")
+            command = encrypt(sendQueue.get_nowait())
+            # First send the length
+            client_writer.write(struct.pack("<I",len(command)))
+            # Then send the command
+            client_writer.write(command)
             sendQueue.task_done()
         except queue.Empty:
             # Not a big deal if there isn't anything to send
@@ -259,7 +276,7 @@ def chat():
                     'type': 'chat',
                     'msg': msg
                 }
-                sendQueue.put(json.dumps(msg))
+                sendQueue.put(dill.dumps(msg))
 
         except:
             print("")
@@ -281,7 +298,7 @@ def sendFile(fileName):
         while data != b"":
 
             # TODO: Rework this "protocol". Right now, it's just going to write files, because... #YOLO
-            sendQueue.put(json.dumps({
+            sendQueue.put(dill.dumps({
                 'type': 'fileTransfer',
                 'fileName': fileName,
                 'data': data.decode('iso-8859-1') # remember to decode after we get it!
@@ -296,7 +313,7 @@ def manageRecvQueue():
     while True:
         msg = recvQueue.get()
         msg = decrypt(msg)
-        msg = json.loads(msg.decode('ascii'))
+        msg = dill.loads(msg)
 
         # Figure out what to do with this message
 
@@ -326,7 +343,7 @@ def manageRecvQueue():
 
             # TODO: Assumption we'll always append. Handle initial write better
             with open(filePath,"ab") as f:
-                f.write(msg['data'].encode(('iso-8859-1')))
+                f.write(msg['data'])
 
         recvQueue.task_done()
 
@@ -337,7 +354,7 @@ def selectVideo():
     fileName = input("Video Name> ")
     video.loadfile(os.path.join(VIDEODIR,fileName))
     
-    sendQueue.put(json.dumps({
+    sendQueue.put(dill.dumps({
         'type': 'load',
         'fileName': fileName
     }))
@@ -348,7 +365,7 @@ def playPause():
 
     video.pause()
 
-    sendQueue.put(json.dumps({
+    sendQueue.put(dill.dumps({
         'type': 'pause'
         }))
 

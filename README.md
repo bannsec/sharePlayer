@@ -11,6 +11,8 @@ I hope to make this mostly OS agnostic. Here are the current dependencies
   - install from https://github.com/Owlz/mplayer.py -- Bugfixes over master branch
  - pyNaCl for crypto
   - pip install pynacl
+ * dill
+  * pip install dill
 
 
 # Security Considerations

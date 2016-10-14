@@ -8,4 +8,5 @@ class Base85Encoder(object):
 
     @staticmethod
     def decode(data):
-        return base64.b85decode(data)
+        # Strip any newlines...
+        return base64.b85decode(data.strip(b"\n"))

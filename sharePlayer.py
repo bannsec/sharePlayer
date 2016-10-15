@@ -23,12 +23,16 @@ from time import sleep
 from ui.console import ConsoleUI
 from modules.chat import Chat
 from modules.banner import Banner
+from modules.connected import Connected
 
 # Initialize the UI
 console = ConsoleUI()
 chat = Chat(console=console)
-console.registerModule(Banner(),height=20)
-console.registerModule(chat,height=90)
+console.registerModule(Banner(console=console),height=10)
+connected = Connected(console=console)
+console.registerModule(connected,height=10)
+# Basically just take the rest of the space
+console.registerModule(chat,height=100)
 
 
 SERVER_HOST = "0.0.0.0"
@@ -97,10 +101,15 @@ def accept_client(client_reader, client_writer):
 
     def client_done(task):
         del clients[task]
+        host,port = client_writer.get_extra_info('peername')
         client_writer.close()
-        log.info("End Connection")
+        # Sending Faux Message to our Queue
+        recvQueue.put(encrypt(dill.dumps({
+            'type': 'disconnected',
+            'host': host,
+            'port': port,
+            'success': True})))
 
-    log.info("New Connection")
     task.add_done_callback(client_done)
 
 
@@ -153,6 +162,10 @@ def handle_client(client_reader, client_writer):
         except concurrent.futures._base.TimeoutError:
             pass
 
+        except asyncio.streams.IncompleteReadError:
+            # Assuming the client disconnected here
+            return
+
         try:            
             send = encrypt(sendQueue.get_nowait())
             # First send the size of this message
@@ -180,13 +193,19 @@ def make_connection(host, port):
 
     def client_done(task):
         del clients[task]
-        log.info("Client Task Finished")
+
+        # Sending Faux Message to our Queue
+        recvQueue.put(encrypt(dill.dumps({
+            'type': 'disconnected',
+            'host': host,
+            'port': port,
+            'success': True})))
+
         if len(clients) == 0:
             log.info("clients is empty, stopping loop.")
             loop = asyncio.get_event_loop()
             loop.stop()
 
-    log.info("New Client Task")
     task.add_done_callback(client_done)
 
 
@@ -214,6 +233,15 @@ def handle_client_connection(host, port):
     resp_enc = encrypt(struct.pack("<I",chal+1))
     client_writer.write(struct.pack("<I",len(resp_enc)))
     client_writer.write(resp_enc)
+
+    # Assume success for now
+    host,port = client_writer.get_extra_info('peername')
+    # Sending Faux Message to our Queue
+    recvQueue.put(encrypt(dill.dumps({
+        'type': 'connected',
+        'host': host,
+        'port': port,
+        'success': True})))
     
     while True:
         # Try to read data
@@ -224,6 +252,10 @@ def handle_client_connection(host, port):
             recvQueue.put(data)
         except concurrent.futures._base.TimeoutError:
             pass
+
+        except asyncio.streams.IncompleteReadError:
+            # Assuming this means disconnect
+            return
 
         try:
             # See if there's something to send
@@ -336,6 +368,11 @@ def manageRecvQueue():
 
         elif msg['type'].lower() == 'connected':
             log.info("Connection {2} from {0}:{1}".format(msg['host'],msg['port'],"success" if msg['success'] else "fail"))
+            connected.add(msg['host'])
+
+        elif msg['type'].lower() == 'disconnected':
+            log.info("Disconnection {2} from {0}:{1}".format(msg['host'],msg['port'],"success" if msg['success'] else "fail"))
+            connected.remove(msg['host'])
 
         elif msg['type'].lower() == 'load':
             video.loadfile(os.path.join(VIDEODIR,msg['fileName']))

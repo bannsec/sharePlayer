@@ -83,6 +83,10 @@ class ConsoleUI:
             # Bottom border
             print("+" + "-"*(baseWidth-2) + "+")
 
+            # Adjust for any unused space
+            allocatedHeight -= (baseHeight - len(out.split("\n")) - 2)
+
+
         ####
         # Always add the prompt at the bottom
         ####

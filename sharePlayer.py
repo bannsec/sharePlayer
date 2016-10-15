@@ -22,11 +22,13 @@ from time import sleep
 
 from ui.console import ConsoleUI
 from modules.chat import Chat
+from modules.banner import Banner
 
 # Initialize the UI
 console = ConsoleUI()
 chat = Chat(console=console)
-console.registerModule(chat)
+console.registerModule(Banner(),height=20)
+console.registerModule(chat,height=90)
 
 
 SERVER_HOST = "0.0.0.0"

@@ -25,11 +25,15 @@ from modules.chat import Chat
 from modules.banner import Banner
 from modules.connected import Connected
 from modules.menu import Menu
+from modules.text import Text
+
 
 ##################
 # Initializing UI
 #####################
+#
 # Chat UI
+#
 console = ConsoleUI()
 console.createView("Chat")
 console.setActiveView("Chat")
@@ -43,7 +47,9 @@ console.registerModule(Banner(),height=20)
 console.registerModule(connected,height=10)
 console.registerModule(chat,height=100) # Take up rest of space
 
+#
 # Main Menu UI 
+#
 console.createView("MainMenu")
 console.setActiveView("MainMenu")
 console.registerModule(Banner(),height=20)
@@ -58,6 +64,16 @@ main_menu.addItem("5","Select Video")
 main_menu.addItem("6","Play/Pause")
 main_menu.addItem("7","Quit")
 console.registerModule(main_menu,height=100)
+
+#
+# Get Secret
+#
+text = Text()
+text.setText("Set your password. This is a secret that you will share with anyone who you are sharing your viewing experience with. It can be anything, but you want to ensure that it is a password that is not easily guessable. >All< of your traffic will be encrypted using a strong authenticated cipher with this key.")
+console.createView("GetPassword")
+console.setActiveView("GetPassword")
+console.registerModule(Banner(),height=20)
+console.registerModule(text,height=100)
 
 
 SERVER_HOST = "0.0.0.0"
@@ -86,8 +102,12 @@ def preChecks():
 
 def setupCrypto():
     global key, box
-
-    password = input("Create Pasword For This Session: ")
+    global console
+    
+    console.setActiveView("GetPassword")
+    console.setPrompt("Password: ")
+    console.draw()
+    password = console.input()
     key = nacl.hash.sha256(password.encode('ascii'),encoder=nacl.encoding.RawEncoder)
     box = nacl.secret.SecretBox(key)
 
@@ -517,6 +537,9 @@ def menu():
 def main():
     # Pre Checks
     preChecks()
+    
+    # Brief pause since mplayer is spitting out ugly errors
+    sleep(1)
 
     # Init things
     setupCrypto()

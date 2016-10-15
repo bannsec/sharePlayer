@@ -352,6 +352,21 @@ def doChat():
             msg = console.input()
             
             if msg != "":
+                
+                # Check for control commands
+                
+                if msg.lower() == "/pause":
+                    playPause()
+                    console.draw()
+                    continue
+
+                if msg.lower() == "/video":
+                    selectVideo()
+                    console.draw()
+                    continue
+
+                if msg.lower() == "/quit":
+                    return
 
                 # Add it to our own chat
                 chat.addMessage(msg)
@@ -459,10 +474,12 @@ def manageRecvQueue():
         recvQueue.task_done()
 
 
-def selectVideo():
+def selectVideo(fileName=None):
     global video
 
-    fileName = input("Video Name> ")
+    if fileName == None:
+        fileName = input("Video Name> ")
+
     video.loadfile(os.path.join(VIDEODIR,fileName))
     
     sendQueue.put(dill.dumps({
@@ -491,10 +508,11 @@ def playPause():
 
 
 def menu():
-    console.setActiveView("MainMenu")
-    console.setPrompt("menu> ")
     
     while True:
+        # Need to set them here due to returning from functions
+        console.setActiveView("MainMenu")
+        console.setPrompt("menu> ")
         console.draw()
 
         try:
@@ -532,6 +550,23 @@ def menu():
         elif selection == 7:
             print("Exiting, bye!")
             exit(0)
+
+def videoMonitor():
+    """
+    Watches for changes in the video's state. I.e.: if you paused
+    Not really using this for now... Kinda hard to implement correctly
+    """
+    state = video.paused
+    state = video.paused
+    
+    while True:
+
+        newState = video.paused
+        
+        if newState != state:
+            state = newState
+
+        sleep(0.2)
 
 
 def main():

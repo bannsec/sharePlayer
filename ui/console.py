@@ -3,7 +3,9 @@ class ConsoleUI:
     
     def __init__(self):
         # List of modules to use
-        self._modules = [] # --> {'module','height','width'}
+        #self._modules = [] # --> {'module','height','width'}
+        self._views = {}
+        self._activeView = None
 
         self.setPrompt("> ")
 
@@ -18,20 +20,35 @@ class ConsoleUI:
         # Always save a spot for the input at the bottom
         self._height -= 1
 
+    def createView(self,viewName):
+        """
+        Creates a UI view by name. I.e.: "mainMenu"
+        """
+        self._views[viewName] = []  # --> {'module','height','width'}
+
+    def setActiveView(self,viewName):
+        """
+        Set which view is currently active
+        """
+        self._activeView = viewName
 
     def registerModule(self,module,height=100,width=100):
         """
         Adds a module to the module list for displaying.
         module.draw(height,width) will be called to render
         height and width are percents of the screen
+        This will register the module to the current active view
         """
         
         # Sanity check
         if height not in range(0,101) or width not in range(0,101):
             log.error("Module registration failed. Height needs to be a percent int between 0 and 100. Registration attempt was for ({0},{1})".format(height,width))
         
+        # Grab the module list for our current view
+        modules = self._views[self._activeView]
+
         # Add it
-        self._modules.append({
+        modules.append({
             "module": module,
             "height": height,
             "width": width
@@ -50,6 +67,13 @@ class ConsoleUI:
         self._setConsoleDimensions()
 
         cls()
+
+        # Check that we have a valid active view
+        if self._activeView == None:
+            print("Error! No valid active view!")
+            return
+
+        modules = self._views[self._activeView]
         
         # TODO: Need to make the height/width calculation here more accurate
         # This will get messed up with multiple modules
@@ -57,7 +81,7 @@ class ConsoleUI:
         # Keep track of what we've already allocated
         allocatedHeight = 0
 
-        for module in self._modules:
+        for module in modules:
 
             allocatedWidth = 0
 

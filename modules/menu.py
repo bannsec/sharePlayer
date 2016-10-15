@@ -24,14 +24,14 @@ class Menu:
     def draw(self,height,width):
 
         # If we're in too small of an area to actually draw, just type
-        if height > len(self._items) + 3:
+        if height < len(self._items) + 3:
             return "Error: Menu space too small. Increase size to view."
 
         ret = self._title + "\n"
         ret += "~"*width + "\n"
         
-        for key,value in self._items:
-            ret += "{0}) {1}\n".format(key,value)
+        for item in self._items:
+            ret += "{0}) {1}\n".format(item['key'],item['value'])
         
         return ret
         

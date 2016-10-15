@@ -24,15 +24,40 @@ from ui.console import ConsoleUI
 from modules.chat import Chat
 from modules.banner import Banner
 from modules.connected import Connected
+from modules.menu import Menu
 
-# Initialize the UI
+##################
+# Initializing UI
+#####################
+# Chat UI
 console = ConsoleUI()
+console.createView("Chat")
+console.setActiveView("Chat")
+
+# Basic modules first
 chat = Chat()
-console.registerModule(Banner(),height=20)
 connected = Connected()
+main_menu = Menu()
+
+console.registerModule(Banner(),height=20)
 console.registerModule(connected,height=10)
+console.registerModule(chat,height=100) # Take up rest of space
+
+# Main Menu UI 
+console.createView("MainMenu")
+console.setActiveView("MainMenu")
+console.registerModule(Banner(),height=20)
+console.registerModule(connected,height=10)
+
 # Basically just take the rest of the space
-console.registerModule(chat,height=100)
+main_menu.addItem("1","Start Server")
+main_menu.addItem("2","Connect To Server")
+main_menu.addItem("3","Enter Chat")
+main_menu.addItem("4","Send Video")
+main_menu.addItem("5","Select Video")
+main_menu.addItem("6","Play/Pause")
+main_menu.addItem("7","Quit")
+console.registerModule(main_menu,height=100)
 
 
 SERVER_HOST = "0.0.0.0"
@@ -293,7 +318,8 @@ def connectClient(server,port):
 
 
 def doChat():
-    global chatMsgs
+    global console
+    console.setActiveView("Chat")
 
     # We're in the chat, let's set a custom prompt
     console.setPrompt("Chat> ")
@@ -308,7 +334,6 @@ def doChat():
             if msg != "":
 
                 # Add it to our own chat
-                #chatMsgs.insert(0,msg)
                 chat.addMessage(msg)
 
                 # Send it off to our connected peers
@@ -446,20 +471,13 @@ def playPause():
 
 
 def menu():
-    print("Menu")
-    print("====")
-    print("1) Start Server")
-    print("2) Connect To Server")
-    print("3) Enter Chat mode")
-    print("4) Send Video")
-    print("5) Select Video")
-    print("6) Play/Pause")
-    print("7) Quit")
-    print("")
-
+    console.setActiveView("MainMenu")
+    console.setPrompt("menu> ")
+    console.draw()
+    
     while True:
         try:
-            selection = int(input("menu> "))
+            selection = int(console.input())
         except:
             continue
 

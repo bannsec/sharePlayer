@@ -36,6 +36,11 @@ class ConsoleUI:
             "height": height,
             "width": width
         })
+
+        # Register itself with the module
+        module.setConsole(self)
+
+
         
     def draw(self):
         """

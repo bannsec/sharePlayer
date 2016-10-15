@@ -27,9 +27,9 @@ from modules.connected import Connected
 
 # Initialize the UI
 console = ConsoleUI()
-chat = Chat(console=console)
-console.registerModule(Banner(console=console),height=20)
-connected = Connected(console=console)
+chat = Chat()
+console.registerModule(Banner(),height=20)
+connected = Connected()
 console.registerModule(connected,height=10)
 # Basically just take the rest of the space
 console.registerModule(chat,height=100)

@@ -4,8 +4,10 @@ class Connected:
     Keep track of who is connected
     """
 
-    def __init__(self,console):
+    def __init__(self):
         self._connected = []
+
+    def setConsole(self,console):
         self._console = console
 
     def add(self,host):

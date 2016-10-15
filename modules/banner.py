@@ -4,9 +4,11 @@ class Banner:
     Just a silly banner class
     """
 
-    def __init__(self,console):
-        self._console = console
+    def __init__(self):
         pass
+
+    def setConsole(self,console):
+        self._console = console
 
     def draw(self,height,width):
 

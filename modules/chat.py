@@ -3,13 +3,7 @@ class Chat:
     Implements a chat module
     """
     
-    def __init__(self,console):
-        """
-        console = calling console so we can ask it to redraw if needed
-        """
-        
-        self._console = console
-
+    def __init__(self):
         # Store the chat messages
         self._chatMsgs = []
         
@@ -21,6 +15,8 @@ class Chat:
         t.daemon = True
         t.start()
         
+    def setConsole(self,console):
+        self._console = console
 
     def _monitorMsgIn(self):
         """

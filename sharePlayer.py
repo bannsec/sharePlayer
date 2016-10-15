@@ -41,9 +41,6 @@ video = mplayer.Player()
 sendQueue = queue.Queue(maxsize=100)
 recvQueue = queue.Queue()
 
-# Store the chat messages
-chatMsgs = []
-
 def preChecks():
     # Make sure mplayer is installed and in a PATH
     if shutil.which("mplayer") == None:

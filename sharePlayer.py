@@ -473,9 +473,10 @@ def playPause():
 def menu():
     console.setActiveView("MainMenu")
     console.setPrompt("menu> ")
-    console.draw()
     
     while True:
+        console.draw()
+
         try:
             selection = int(console.input())
         except:

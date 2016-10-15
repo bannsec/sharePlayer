@@ -77,7 +77,7 @@ class ConsoleUI:
             # Top border
             print("+" + "-"*(baseWidth-2) + "+")
 
-            for line in out.split("\n"):
+            for line in out.split("\n")[:height]:
                 print("| " + line + " " * (baseWidth - len(line) - 3) + "|")
 
             # Bottom border

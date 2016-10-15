@@ -240,8 +240,6 @@ def connectClient(server,port):
     loop.run_forever()
 
 
-def cls():
-    os.system('cls' if os.name=='nt' else 'clear')
 
 def printChat():
     # TODO: There's a race condition in here both on adding messages and printing. This really needs to be controlled through it's own class

@@ -3,7 +3,13 @@ class Chat:
     Implements a chat module
     """
     
-    def __init__(self):
+    def __init__(self,console):
+        """
+        console = calling console so we can ask it to redraw if needed
+        """
+        
+        self._console = console
+
         # Store the chat messages
         self._chatMsgs = []
         
@@ -21,7 +27,9 @@ class Chat:
         This will be started as a thread to monitor the msg in queue and add messages as they arrive
         """
         while True:
-            self._chatMsgs.append(self._msgInQueue.get())
+            self._chatMsgs.insert(0,self._msgInQueue.get())
+            # Ask it to redraw for us
+            self._console.draw()
 
 
     def draw(self,height,width):

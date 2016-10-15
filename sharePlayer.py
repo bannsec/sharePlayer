@@ -17,10 +17,17 @@ import subprocess
 import base64
 import dill
 import progressbar
+from time import sleep
 
 
-# Custom pyNaCl encoder
-from Base85Encoder import Base85Encoder
+from ui.console import ConsoleUI
+from modules.chat import Chat
+
+# Initialize the UI
+console = ConsoleUI()
+chat = Chat(console=console)
+console.registerModule(chat)
+
 
 SERVER_HOST = "0.0.0.0"
 SERVER_PORT = 12345
@@ -237,37 +244,24 @@ def connectClient(server,port):
     loop.run_forever()
 
 
-
-def printChat():
-    # TODO: There's a race condition in here both on adding messages and printing. This really needs to be controlled through it's own class
+def doChat():
     global chatMsgs
 
-    # Grab the current dimentions
-    lines = shutil.get_terminal_size().lines
-    columns = shutil.get_terminal_size().columns
+    # We're in the chat, let's set a custom prompt
+    console.setPrompt("Chat> ")
 
-    # Clear the screen
-    cls()
-
-    # Print the messages we have, padding if need be
-    msgs = chatMsgs[:lines-3] if len(chatMsgs) > lines-3 else (['']*(lines - len(chatMsgs) - 3) + chatMsgs)
-
-    for msg in msgs[::-1]:
-        print(msg)
-    
-
-def chat():
-    global chatMsgs
+    console.draw()
 
     while True:
-        printChat()
 
         try:
-            msg = input("Chat> ")
+            msg = console.input()
+            
             if msg != "":
 
                 # Add it to our own chat
-                chatMsgs.insert(0,msg)
+                #chatMsgs.insert(0,msg)
+                chat.addMessage(msg)
 
                 # Send it off to our connected peers
                 msg = {
@@ -276,8 +270,8 @@ def chat():
                 }
                 sendQueue.put(dill.dumps(msg))
 
-        except:
-            print("")
+        except Exception as e:
+            print(str(e))
             return
 
 def sendFile(fileName):
@@ -335,8 +329,8 @@ def manageRecvQueue():
 
         if msg['type'].lower() == 'chat':
             subprocess.check_output(["mplayer",os.path.join(DIR,"notifications","just-like-that.mp3")],stderr=subprocess.STDOUT)
-            chatMsgs.insert(0,">>> " + msg['msg'])
-            printChat()
+            #chatMsgs.insert(0,">>> " + msg['msg'])
+            chat.addMessage(">>> " + msg['msg'])
 
         elif msg['type'].lower() == 'connected':
             log.info("Connection {2} from {0}:{1}".format(msg['host'],msg['port'],"success" if msg['success'] else "fail"))
@@ -429,7 +423,7 @@ def menu():
             t.start()
         
         elif selection == 3:
-            chat()
+            doChat()
 
         elif selection == 4:
             fileName = input("Name of file to send> ")

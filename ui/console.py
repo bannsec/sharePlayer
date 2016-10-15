@@ -5,6 +5,8 @@ class ConsoleUI:
         # List of modules to use
         self._modules = [] # --> {'module','height','width'}
 
+        self.setPrompt("> ")
+
         self._setConsoleDimensions()        
 
 
@@ -41,16 +43,67 @@ class ConsoleUI:
         Actually re-draw the screen
         """
         cls()
+        
+        # TODO: Need to make the height/width calculation here more accurate
+        # This will get messed up with multiple modules
+
+        # Keep track of what we've already allocated
+        allocatedHeight = 0
 
         for module in self._modules:
+
+            allocatedWidth = 0
+
+            # Figure out the base allocations
+            baseHeight=int(self._height / 100 * module['height'])
+            baseWidth=int(self._width / 100 * module['width'])
+
+            # If we attempted to allocate too much, give the max possible
+            if allocatedHeight + baseHeight > self._height:
+                baseHeight = self._height - allocatedHeight
+
+            # Update how much we've allocated
+            allocatedHeight += baseHeight
+            
+            # Let's draw a box around them. Need to adjust the hight and width
+            height = baseHeight - 2
+            width = baseWidth - 4
+            
             out = module['module'].draw(
-                height=int(self._height / 100 * module['height']),
-                width=int(self._width / 100 * module['width']))
-            print(out)
+                height=height,
+                width=width)
+            # Top border
+            print("+" + "-"*(baseWidth-2) + "+")
+
+            for line in out.split("\n"):
+                print("| " + line + " " * (baseWidth - len(line) - 3) + "|")
+
+            # Bottom border
+            print("+" + "-"*(baseWidth-2) + "+")
+
+        ####
+        # Always add the prompt at the bottom
+        ####
+        
+        sys.stdout.write(self._prompt)
+        sys.stdout.flush()
+
+    def setPrompt(self,prompt):
+        self._prompt = prompt
+
+    def input(self):
+        """
+        Implementing get input call directly in the console. This helps make the look and feel better
+        Use setPrompt to set a custom prompt
+        """
+        # For now, just do this
+        return input()
 
 
 import shutil
 import logging
+import sys
+
 from helpers import cls
 
 log = logging.getLogger("ConsoleUI")

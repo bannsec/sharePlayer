@@ -9,7 +9,6 @@ class ConsoleUI:
 
         self._setConsoleDimensions()        
 
-
     def _setConsoleDimensions(self):
 
         # Grab current console dimensions
@@ -42,6 +41,9 @@ class ConsoleUI:
         """
         Actually re-draw the screen
         """
+        # Double check the size of our console
+        self._setConsoleDimensions()
+
         cls()
         
         # TODO: Need to make the height/width calculation here more accurate

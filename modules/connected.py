@@ -13,8 +13,12 @@ class Connected:
         self._console.draw()
 
     def remove(self,host):
-        self._connected.remove(host)
-        self._console.draw()
+        try:
+            self._connected.remove(host)
+            self._console.draw()
+        except:
+            # Usually this will happen if there is a failed authentication
+            pass
 
     def draw(self,height,width):
 

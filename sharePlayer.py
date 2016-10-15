@@ -129,8 +129,22 @@ def handle_client(client_reader, client_writer):
     client_writer.write(struct.pack("<I",len(chal_enc)))
     client_writer.write(chal_enc)
 
-    # See if we get the right response, timing out
-    size = yield from asyncio.wait_for(client_reader.readexactly(4),timeout=2)
+    try:
+        # See if we get the right response, timing out
+        size = yield from asyncio.wait_for(client_reader.readexactly(4),timeout=2)
+
+    except:
+        # The client can choose to fail if it cannot decrypt. This probably
+        # happened if we hit here
+        host,port = client_writer.get_extra_info('peername')
+        # Sending Faux Message to our Queue
+        recvQueue.put(encrypt(dill.dumps({
+            'type': 'connected',
+            'host': host,
+            'port': port,
+            'success': False})))
+        return
+
     size = struct.unpack("<I",size)[0]
     data = yield from asyncio.wait_for(client_reader.readexactly(size),timeout=2)
     data = decrypt(data)

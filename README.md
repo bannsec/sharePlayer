@@ -1,4 +1,4 @@
-# In development. Not usable at the moment
+# Overview
 This goal for this library is to allow people to play back audio and video together with a group of other people across networks or internet.
 
 # Dependencies
@@ -11,10 +11,10 @@ I hope to make this mostly OS agnostic. Here are the current dependencies
   - install from https://github.com/Owlz/mplayer.py -- Bugfixes over master branch
  - pyNaCl for crypto
   - pip install pynacl
- * dill
-  * pip install dill
- * progressbar2
-  * pip install progressbar2
+ - dill
+  - pip install dill
+ - progressbar2
+  - pip install progressbar2
 
 
 # Security Considerations

@@ -20,12 +20,12 @@ import progressbar
 from time import sleep
 
 
-from ui.console import ConsoleUI
-from modules.chat import Chat
-from modules.banner import Banner
-from modules.connected import Connected
-from modules.menu import Menu
-from modules.text import Text
+from sharePlayer.ui.console import ConsoleUI
+from sharePlayer.modules.chat import Chat
+from sharePlayer.modules.banner import Banner
+from sharePlayer.modules.connected import Connected
+from sharePlayer.modules.menu import Menu
+from sharePlayer.modules.text import Text
 
 
 ##################

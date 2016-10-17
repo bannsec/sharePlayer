@@ -139,7 +139,7 @@ import shutil
 import logging
 import sys
 
-from helpers import cls
+from sharePlayer.helpers import cls
 
 log = logging.getLogger("ConsoleUI")
 

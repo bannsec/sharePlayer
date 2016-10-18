@@ -47,7 +47,7 @@ setup(
         'Development Status :: 5 - Production/Stable',
 
         # Indicate who your project is intended for
-        'Intended Audience :: Users',
+        'Intended Audience :: End Users/Desktop',
         #'Topic :: Software Development :: ',
 
         # Pick your license as you wish (should match "license" above)

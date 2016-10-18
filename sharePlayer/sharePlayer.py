@@ -76,6 +76,7 @@ console.registerModule(Banner(),height=20)
 console.registerModule(text,height=100)
 
 
+
 SERVER_HOST = "0.0.0.0"
 SERVER_PORT = 12345
 
@@ -386,10 +387,12 @@ def sendFile(fileName):
     # Path of file to send
     filePath = os.path.abspath(os.path.join(VIDEODIR,fileName))
 
+    # NOTE: Disabling traversal check for now. This should be implemented in
+    # the media manager
     # No traversal please...
-    if not filePath.startswith(VIDEODIR):
-        log.error("You're trying to send something that isn't in your Video directory. Bailing.")
-        return
+    #if not filePath.startswith(VIDEODIR):
+    #    log.error("You're trying to send something that isn't in your Video directory. Bailing.")
+    #    return
 
     # Figure out the file size
     fileSize = os.path.getsize(filePath)

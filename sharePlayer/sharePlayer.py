@@ -396,7 +396,6 @@ def sendFile(fileName):
 
     # Figure out the file size
     fileSize = os.path.getsize(filePath)
-    print("File size is {0}".format(fileSize))
 
     # Progress bar to monitor progress
     bar = progressbar.ProgressBar(widgets=[
@@ -452,7 +451,10 @@ def manageRecvQueue():
             connected.remove(msg['host'])
 
         elif msg['type'].lower() == 'load':
-            video.loadfile(os.path.join(VIDEODIR,msg['fileName']))
+            # Loading only the base name for now
+            fileName = os.path.basename(msg['fileName'])
+            video.loadfile(os.path.join(VIDEODIR,fileName))
+
 
         elif msg['type'].lower() == 'pause':
             video.pause()
@@ -460,9 +462,11 @@ def manageRecvQueue():
         elif msg['type'].lower() == "filetransfer":
             # TODO: Opening and closing the file this many times is VERY inefficient
             # TODO: Check if user wants to accept the file
-
+            # TODO: This needs to go into the media manager for better
+            # handling... For now, we'll truncate the video name
+            fileName = os.path.basename(msg['fileName'])
             # Sanity check
-            filePath = os.path.abspath(os.path.join(VIDEODIR,msg['fileName']))
+            filePath = os.path.abspath(os.path.join(VIDEODIR,fileName))
             if not filePath.startswith(VIDEODIR):
                 log.error("Someone attempted to write to a file outside of your Video directory! They are not your friend. :-(\n\t{0}".format(filePath))
                 continue

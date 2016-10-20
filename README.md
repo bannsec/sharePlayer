@@ -27,6 +27,9 @@ I hope to make this mostly OS agnostic. Here are the current dependencies
  - progressbar2
   - pip install progressbar2
 
+# Configuration
+Right now sharePlayer supports a configuration file. This file is in ini format and can be manually edited. It also has a menu option to edit this file through the app itself. The location of this file will differ based on your OS (using appdirs in the backend). For instance, on Linux, it will be under ~/.config/sharePlayer.
+
 
 # Security Considerations
 This app has been outfitted with authenticating encryption. The other end needs to know the password ahead of time to be able to connect. Choose a strong password if you're concerned about others joining this session.

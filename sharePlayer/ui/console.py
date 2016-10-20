@@ -20,11 +20,24 @@ class ConsoleUI:
         # Always save a spot for the input at the bottom
         self._height -= 1
 
+    def hasView(self,viewName):
+        """
+        Return boolean if the console has a view with the given name
+        """
+        return viewName in self._views
+
     def createView(self,viewName):
         """
         Creates a UI view by name. I.e.: "mainMenu"
         """
         self._views[viewName] = []  # --> {'module','height','width'}
+
+    def deleteView(self,viewName):
+        """
+        Deletes a view
+        """
+        del self._views[viewName]
+
 
     def setActiveView(self,viewName):
         """

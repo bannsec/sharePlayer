@@ -64,7 +64,8 @@ main_menu.addItem("3","Enter Chat")
 main_menu.addItem("4","Send Video")
 main_menu.addItem("5","Select Video")
 main_menu.addItem("6","Play/Pause")
-main_menu.addItem("7","Quit")
+main_menu.addItem("7","View/Edit Config")
+main_menu.addItem("8","Quit")
 console.registerModule(main_menu,height=100)
 
 #
@@ -143,6 +144,64 @@ def initConfig():
     # If we have a file, read it in
     else:
         config.read(configFile)
+
+def configMenu():
+    """
+    Menu for showing current config and updating it
+    """
+    global console
+
+    while True:
+        console.setPrompt("config> ")
+
+        # We want a dynamic view. For now, we'll just keep rebuilding it
+        if console.hasView("ConfigMenu"):
+            console.deleteView("ConfigMenu")
+    
+        console.createView("ConfigMenu")
+        console.setActiveView("ConfigMenu")
+        console.registerModule(Banner(),height=20)
+        console.registerModule(connected,height=10)
+
+        config_menu = Menu()
+    
+        config_menu.addItem("1","Default Server IP: {0}".format(config['Server']['IP']))
+        config_menu.addItem("2","Default Server Port: {0}".format(config['Server']['Port']))
+        config_menu.addItem("3","Default Connect Host: {0}".format(config['Client']['IP']))
+        config_menu.addItem("4","Default Connect Port: {0}".format(config['Client']['Port']))
+        config_menu.addItem("5","Back")
+        console.registerModule(config_menu,height=100)
+
+        console.draw()
+        
+        # Try to grab an input
+        try:
+            inp = int(console.input())
+        except:
+            continue
+
+        if inp == 1:
+            new_default = input("New Server IP Default: ")
+            config['Server']['IP'] = new_default
+            config.sync()
+    
+        elif inp == 2:
+            new_default = input("New Server Port Default: ")
+            config['Server']['Port'] = new_default
+            config.sync()
+
+        elif inp == 3:
+            new_default = input("New Connect Host Default: ")
+            config['Client']['IP'] = new_default
+            config.sync()
+
+        elif inp == 4:
+            new_default = input("New Connect Port Default: ")
+            config['Client']['Port'] = new_default
+            config.sync()
+
+        elif inp == 5:
+            return
 
 
 def preChecks():
@@ -606,6 +665,9 @@ def menu():
             playPause()
 
         elif selection == 7:
+            configMenu()
+
+        elif selection == 8:
             print("Exiting, bye!")
             exit(0)
 

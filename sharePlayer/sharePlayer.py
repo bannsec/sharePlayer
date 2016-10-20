@@ -17,6 +17,8 @@ import subprocess
 import base64
 import dill
 import progressbar
+import configparser
+import appdirs
 from time import sleep
 
 
@@ -95,6 +97,53 @@ video = mplayer.Player()
 # Need to update it if we want more than 2 people viewing at the same time
 sendQueue = queue.Queue(maxsize=100)
 recvQueue = queue.Queue()
+
+def initConfig():
+    """
+    Sets up the config global variable
+    """
+    def sync():
+        """
+        Adding function to configfile to sync up
+        """
+        with open(configFile,"w") as f:
+            config.write(f)
+    
+    global config, configFile
+
+    # Figure out where our config should be
+    user_config_dir = appdirs.AppDirs("sharePlayer").user_config_dir
+
+    # Make it if needed
+    os.makedirs(user_config_dir,exist_ok=True)
+
+    # Find our config file
+    configFile = os.path.join(user_config_dir,"config.ini")
+    
+    config = configparser.ConfigParser()
+
+    # Adding custom sync command
+    config.sync = sync
+
+    # If we don't have one, create it
+    if not os.path.isfile(configFile):
+        
+        config['Server'] = {
+            'IP': '0.0.0.0',
+            'Port': '12345'
+        }
+
+        config['Client'] = {
+            'IP' : '',
+            'Port': ''
+        }
+        
+        config.sync()
+
+    # If we have a file, read it in
+    else:
+        config.read(configFile)
+
 
 def preChecks():
     # Make sure mplayer is installed and in a PATH
@@ -579,6 +628,9 @@ def videoMonitor():
 def main():
     # Pre Checks
     preChecks()
+
+    # Setup config
+    initConfig()
     
     # Brief pause since mplayer is spitting out ugly errors
     sleep(1)

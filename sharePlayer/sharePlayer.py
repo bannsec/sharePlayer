@@ -584,9 +584,9 @@ def menu():
             t.start()
 
         elif selection == 2:
-            server = input("Server Host> ")
-            port = int(input("Server port> "))
-            t = threading.Thread(target=connectClient,args=(server,port))
+            server = input("Server Host (default: {0})>".format(config['Client']['IP'])) or config['Client']['IP']
+            port = input("Server port (default: {0})> ".format(config['Client']['Port'])) or config['Client']['Port']
+            t = threading.Thread(target=connectClient,args=(server,int(port)))
             t.daemon = True
             t.start()
         

@@ -176,7 +176,7 @@ def encrypt(buf):
     # Build a new nonce
     nonce = nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
 
-    return box.encrypt(buf, nonce)#,encoder=Base85Encoder)
+    return box.encrypt(buf, nonce)
     
 def decrypt(buf):
     """
@@ -287,6 +287,8 @@ def handle_client(client_reader, client_writer):
 
 
 def startServer():
+    SERVER_HOST = config['Server']['IP']
+    SERVER_PORT = int(config['Server']['Port'])
     print("Starting server on {0}:{1}".format(SERVER_HOST,SERVER_PORT))
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)

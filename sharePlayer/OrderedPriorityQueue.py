@@ -11,4 +11,15 @@ class OrderedPriorityQueue(queue.PriorityQueue):
 
         # Call the constructor
         queue.PriorityQueue.__init__(self)
+
+    def put(self,msg,priority):
+        """
+        This is where the magic is. Give a priority integer (lower is higher priority).
+        """
+        
+        # Send it
+        queue.PriorityQueue.put(self,(priority,self._count,msg))
+        
+        # Update our count
+        self._count += 1
     

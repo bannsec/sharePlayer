@@ -516,8 +516,9 @@ def doChat():
                     'msg': msg,
                     'username': config['User']['Username']
                 }
-                sendQueue.put((PRIORITY_CHAT,sendQueueCounter,dill.dumps(msg)))
-                sendQueueCounter += 1
+                sendQueue.put(msg=dill.dumps(msg),priority=PRIORITY_CHAT)
+                #sendQueue.put((PRIORITY_CHAT,sendQueueCounter,dill.dumps(msg)))
+                #sendQueueCounter += 1
 
         except Exception as e:
             log.warn(str(e))
@@ -554,12 +555,12 @@ def sendFile(fileName):
             bar.update(totalRead)
 
             # TODO: Rework this "protocol". Right now, it's just going to write files, because... #YOLO
-            sendQueue.put((PRIORITY_TRANSFER,sendQueueCounter,dill.dumps({
+            sendQueue.put(priority=PRIORITY_TRANSFER,msg=dill.dumps({
                 'type': 'fileTransfer',
                 'fileName': fileName,
                 'data': data
-            })))
-            sendQueueCounter += 1
+            }))
+            #sendQueueCounter += 1
 
             data = f.read(SENDSIZE)
             totalRead += len(data)
@@ -629,11 +630,11 @@ def selectVideo(fileName=None):
 
     video.loadfile(os.path.join(VIDEODIR,fileName))
     
-    sendQueue.put((PRIORITY_COMMAND,sendQueueCounter,dill.dumps({
+    sendQueue.put(priority=PRIORITY_COMMAND,msg=dill.dumps({
         'type': 'load',
         'fileName': fileName
-    })))
-    sendQueueCounter += 1
+    }))
+    #sendQueueCounter += 1
 
 
 def playPause():
@@ -641,18 +642,18 @@ def playPause():
 
     video.pause()
 
-    sendQueue.put((PRIORITY_COMMAND,sendQueueCounter,dill.dumps({
+    sendQueue.put(priority=PRIORITY_COMMAND,msg=dill.dumps({
         'type': 'pause'
-        })))
+        }))
     sendQueueCounter += 1
 
     # If we just pased it, sync everyone together
     if video.paused:
-        sendQueue.put((PRIORITY_COMMAND,sendQueueCounter,dill.dumps({
+        sendQueue.put(priority=PRIORITY_COMMAND,msg=dill.dumps({
             'type': 'time_pos',
             'pos': video.time_pos
-        })))
-        sendQueueCounter += 1
+        }))
+        #sendQueueCounter += 1
         video.time_pos = video.time_pos
 
 

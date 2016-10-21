@@ -1,7 +1,12 @@
 # Overview
 This goal for this library is to allow people to play back audio and video together with a group of other people across networks or internet.
 
-# Installation
+
+# Supported Platforms
+The goal is to build this in such a way as to support all the major platforms. That said, for now it is only tested on Linux (Ubuntu). Some initial testing on Windows indicates some things will need to be modified on the script, but it should generally be workable in the future. I do not have a Mac so I have no way of testing that side.
+
+
+# Installation/Quick Start
 This is primarily just a python project. Installation boils down to simply `pip install sharePlayer`. Here's a useful one-liner:
 
 `mkvirtualenv --python=$(which python3) -i sharePlayer sharePlayer`

@@ -80,9 +80,6 @@ console.registerModule(text,height=100)
 
 
 
-SERVER_HOST = "0.0.0.0"
-SERVER_PORT = 12345
-
 LIMIT=8*1024*1024 # streams read and write buffer size, might not actually need this anymore...
 SENDSIZE=4*1024*1024 # The size of chunks of data to use when sending a file
 
@@ -96,8 +93,17 @@ video = mplayer.Player()
 
 # TODO: This is set up for a single viewing party right now
 # Need to update it if we want more than 2 people viewing at the same time
-sendQueue = queue.Queue(maxsize=100)
+sendQueue = queue.PriorityQueue(maxsize=100)
+sendQueueCounter = 0 # Help to ensure messages are in order with priority
 recvQueue = queue.Queue()
+
+#
+# Define priorities (lower number is higher priority)
+#
+PRIORITY_CHAT = 5 # Medium priority for sending chat messages
+PRIORITY_TRANSFER = 10 # Transfer should be low priority
+PRIORITY_COMMAND = 0 # Top priority for commands
+
 
 def initConfig():
     """
@@ -334,8 +340,8 @@ def handle_client(client_reader, client_writer):
             # Assuming the client disconnected here
             return
 
-        try:            
-            send = encrypt(sendQueue.get_nowait())
+        try:
+            send = encrypt(sendQueue.get_nowait()[2])
             # First send the size of this message
             client_writer.write(struct.pack("<I",len(send)))
             # Then send the message itself
@@ -429,7 +435,7 @@ def handle_client_connection(host, port):
 
         try:
             # See if there's something to send
-            command = encrypt(sendQueue.get_nowait())
+            command = encrypt(sendQueue.get_nowait()[2])
             # First send the length
             client_writer.write(struct.pack("<I",len(command)))
             # Then send the command
@@ -449,7 +455,7 @@ def connectClient(server,port):
 
 
 def doChat():
-    global console
+    global console, sendQueueCounter
     console.setActiveView("Chat")
 
     # We're in the chat, let's set a custom prompt
@@ -487,13 +493,15 @@ def doChat():
                     'type': 'chat',
                     'msg': msg
                 }
-                sendQueue.put(dill.dumps(msg))
+                sendQueue.put((PRIORITY_CHAT,sendQueueCounter,dill.dumps(msg)))
+                sendQueueCounter += 1
 
         except Exception as e:
             print(str(e))
             return
 
 def sendFile(fileName):
+    global sendQueueCounter
     # Path of file to send
     filePath = os.path.abspath(os.path.join(VIDEODIR,fileName))
 
@@ -523,11 +531,12 @@ def sendFile(fileName):
             bar.update(totalRead)
 
             # TODO: Rework this "protocol". Right now, it's just going to write files, because... #YOLO
-            sendQueue.put(dill.dumps({
+            sendQueue.put((PRIORITY_TRANSFER,sendQueueCounter,dill.dumps({
                 'type': 'fileTransfer',
                 'fileName': fileName,
                 'data': data
-            }))
+            })))
+            sendQueueCounter += 1
 
             data = f.read(SENDSIZE)
             totalRead += len(data)
@@ -592,34 +601,37 @@ def manageRecvQueue():
 
 
 def selectVideo(fileName=None):
-    global video
+    global video, sendQueueCounter
 
     if fileName == None:
         fileName = input("Video Name> ")
 
     video.loadfile(os.path.join(VIDEODIR,fileName))
     
-    sendQueue.put(dill.dumps({
+    sendQueue.put((PRIORITY_COMMAND,sendQueueCounter,dill.dumps({
         'type': 'load',
         'fileName': fileName
-    }))
+    })))
+    sendQueueCounter += 1
 
 
 def playPause():
-    global video
+    global video, sendQueueCounter
 
     video.pause()
 
-    sendQueue.put(dill.dumps({
+    sendQueue.put((PRIORITY_COMMAND,sendQueueCounter,dill.dumps({
         'type': 'pause'
-        }))
+        })))
+    sendQueueCounter += 1
 
     # If we just pased it, sync everyone together
     if video.paused:
-        sendQueue.put(dill.dumps({
+        sendQueue.put((PRIORITY_COMMAND,sendQueueCounter,dill.dumps({
             'type': 'time_pos',
             'pos': video.time_pos
-        }))
+        })))
+        sendQueueCounter += 1
         video.time_pos = video.time_pos
 
 

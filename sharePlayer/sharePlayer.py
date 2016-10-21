@@ -29,6 +29,8 @@ from sharePlayer.modules.connected import Connected
 from sharePlayer.modules.menu import Menu
 from sharePlayer.modules.text import Text
 
+from sharePlayer.OrderedPriorityQueue import OrderedPriorityQueue
+
 
 ##################
 # Initializing UI
@@ -93,7 +95,7 @@ video = mplayer.Player()
 
 # TODO: This is set up for a single viewing party right now
 # Need to update it if we want more than 2 people viewing at the same time
-sendQueue = queue.PriorityQueue(maxsize=100)
+sendQueue = OrderedPriorityQueue(maxsize=100) # queue.PriorityQueue(maxsize=100)
 sendQueueCounter = 0 # Help to ensure messages are in order with priority
 recvQueue = queue.Queue()
 

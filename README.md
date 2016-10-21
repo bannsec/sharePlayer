@@ -16,6 +16,10 @@ At that point, you are in your virtual environment and sharePlayer has been inst
 # Running
 To run sharePlayer, simply run the command `sharePlayer`. It's highly encouraged for you to install this into a python virtual environment, so if you did that you would want to make sure that your virtual environment is open prior to running that command.
 
+# Caveats
+This app is based on client/server configuration. The server in this case is you or your co-video watcher. You need to be able to set up your network in such a way that the client can get to the server. I have not implemented any UPnP type functionality yet.
+
+This app has been developed with the concept of having viewing parties. However, for the moment it is only tested for having one server and one client (two people total). It will likely not work as expected or at all if you attempt to connect more. This is temporary, but for now it's a 2 person viewing system.
 
 # Dependencies
 I hope to make this mostly OS agnostic. Here are the current dependencies

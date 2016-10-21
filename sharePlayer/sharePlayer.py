@@ -354,7 +354,7 @@ def handle_client(client_reader, client_writer):
 def startServer():
     SERVER_HOST = config['Server']['IP']
     SERVER_PORT = int(config['Server']['Port'])
-    print("Starting server on {0}:{1}".format(SERVER_HOST,SERVER_PORT))
+    log.info("Starting server on {0}:{1}".format(SERVER_HOST,SERVER_PORT))
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     f = asyncio.start_server(accept_client, host=SERVER_HOST, port=SERVER_PORT,limit=LIMIT)
@@ -497,7 +497,7 @@ def doChat():
                 sendQueueCounter += 1
 
         except Exception as e:
-            print(str(e))
+            log.warn(str(e))
             return
 
 def sendFile(fileName):

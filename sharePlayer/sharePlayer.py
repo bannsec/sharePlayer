@@ -320,6 +320,7 @@ def handle_client(client_reader, client_writer):
     data = decrypt(data)
     resp = struct.unpack("<I",data)[0]
 
+    # Validate the response was correct
     if resp != chal + 1:
         logging.warn("Invalid response received. Closing connection")
         return
@@ -501,7 +502,8 @@ def doChat():
                 # Send it off to our connected peers
                 msg = {
                     'type': 'chat',
-                    'msg': msg
+                    'msg': msg,
+                    'username': config['User']['Username']
                 }
                 sendQueue.put((PRIORITY_CHAT,sendQueueCounter,dill.dumps(msg)))
                 sendQueueCounter += 1
@@ -557,7 +559,6 @@ def sendFile(fileName):
 def manageRecvQueue():
 
     # TODO: Change msg['type'] into int enum that will take up less space on the network
-    global chatMsgs
 
     while True:
         msg = recvQueue.get()
@@ -568,8 +569,7 @@ def manageRecvQueue():
 
         if msg['type'].lower() == 'chat':
             subprocess.check_output(["mplayer",os.path.join(DIR,"notifications","just-like-that.mp3")],stderr=subprocess.STDOUT)
-            #chatMsgs.insert(0,">>> " + msg['msg'])
-            chat.addMessage(">>> " + msg['msg'])
+            chat.addMessage("{0}> {1}".format(msg['username'],msg['msg']))
 
         elif msg['type'].lower() == 'connected':
             log.info("Connection {2} from {0}:{1}".format(msg['host'],msg['port'],"success" if msg['success'] else "fail"))

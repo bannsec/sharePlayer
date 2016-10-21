@@ -260,7 +260,7 @@ def decrypt(buf):
     assert type(buf) in [nacl.utils.EncryptedMessage, bytes]
     
     try:
-        return box.decrypt(buf)# ,encoder=Base85Encoder)
+        return box.decrypt(buf)
     except:
         return None
 
@@ -328,12 +328,16 @@ def handle_client(client_reader, client_writer):
     logging.info("Correct response. Client connected.")
 
     host,port = client_writer.get_extra_info('peername')
+    
+    # TODO: Is this cross platform? Works on Linux...
+    connId = client_writer.transport._sock_fd # use the socket ID as our ID
+    
     # Sending Faux Message to our Queue
-    recvQueue.put(encrypt(dill.dumps({
+    recvQueue.put((connId, encrypt(dill.dumps({
         'type': 'connected',
         'host': host,
         'port': port,
-        'success': True})))
+        'success': True}))))
     
     while True:
         try:
@@ -342,7 +346,7 @@ def handle_client(client_reader, client_writer):
             # If we get a size field, we know we're expecting data so let's get it
             size = struct.unpack("<I",size)[0]
             data = yield from asyncio.wait_for(client_reader.readexactly(size),timeout=None)
-            recvQueue.put(data)
+            recvQueue.put((connId,data))
 
         except concurrent.futures._base.TimeoutError:
             pass
@@ -382,11 +386,12 @@ def make_connection(host, port):
         del clients[task]
 
         # Sending Faux Message to our Queue
-        recvQueue.put(encrypt(dill.dumps({
+        # TODO: Mocking the connection ID for now
+        recvQueue.put((0,encrypt(dill.dumps({
             'type': 'disconnected',
             'host': host,
             'port': port,
-            'success': True})))
+            'success': True}))))
 
         if len(clients) == 0:
             log.info("clients is empty, stopping loop.")
@@ -423,12 +428,16 @@ def handle_client_connection(host, port):
 
     # Assume success for now
     host,port = client_writer.get_extra_info('peername')
+
+    # TODO: Is this cross platform? Works on Linux...
+    connId = client_writer.transport._sock_fd # use the socket ID as our ID
+    
     # Sending Faux Message to our Queue
-    recvQueue.put(encrypt(dill.dumps({
+    recvQueue.put((connId,encrypt(dill.dumps({
         'type': 'connected',
         'host': host,
         'port': port,
-        'success': True})))
+        'success': True}))))
     
     while True:
         # Try to read data
@@ -436,7 +445,7 @@ def handle_client_connection(host, port):
             size = yield from asyncio.wait_for(client_reader.readexactly(4),timeout=0.2)
             size = struct.unpack("<I",size)[0]
             data = yield from asyncio.wait_for(client_reader.readexactly(size),timeout=None)
-            recvQueue.put(data)
+            recvQueue.put((connId,data))
         except concurrent.futures._base.TimeoutError:
             pass
 
@@ -561,7 +570,7 @@ def manageRecvQueue():
     # TODO: Change msg['type'] into int enum that will take up less space on the network
 
     while True:
-        msg = recvQueue.get()
+        connId, msg = recvQueue.get()
         msg = decrypt(msg)
         msg = dill.loads(msg)
 

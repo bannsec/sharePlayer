@@ -25,6 +25,6 @@ class Connected:
     def draw(self,height,width):
 
         return "Connected: {0}".format(
-            ','.join([host for host in self._connected])
+            ', '.join([host for host in self._connected])
         )
 

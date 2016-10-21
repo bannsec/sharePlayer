@@ -96,7 +96,6 @@ video = mplayer.Player()
 # TODO: This is set up for a single viewing party right now
 # Need to update it if we want more than 2 people viewing at the same time
 sendQueue = OrderedPriorityQueue(maxsize=100) # queue.PriorityQueue(maxsize=100)
-sendQueueCounter = 0 # Help to ensure messages are in order with priority
 recvQueue = queue.Queue()
 
 #
@@ -517,8 +516,6 @@ def doChat():
                     'username': config['User']['Username']
                 }
                 sendQueue.put(msg=dill.dumps(msg),priority=PRIORITY_CHAT)
-                #sendQueue.put((PRIORITY_CHAT,sendQueueCounter,dill.dumps(msg)))
-                #sendQueueCounter += 1
 
         except Exception as e:
             log.warn(str(e))
@@ -560,7 +557,6 @@ def sendFile(fileName):
                 'fileName': fileName,
                 'data': data
             }))
-            #sendQueueCounter += 1
 
             data = f.read(SENDSIZE)
             totalRead += len(data)
@@ -634,7 +630,6 @@ def selectVideo(fileName=None):
         'type': 'load',
         'fileName': fileName
     }))
-    #sendQueueCounter += 1
 
 
 def playPause():
@@ -645,7 +640,6 @@ def playPause():
     sendQueue.put(priority=PRIORITY_COMMAND,msg=dill.dumps({
         'type': 'pause'
         }))
-    sendQueueCounter += 1
 
     # If we just pased it, sync everyone together
     if video.paused:
@@ -653,7 +647,6 @@ def playPause():
             'type': 'time_pos',
             'pos': video.time_pos
         }))
-        #sendQueueCounter += 1
         video.time_pos = video.time_pos
 
 

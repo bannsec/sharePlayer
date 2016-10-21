@@ -65,7 +65,7 @@ main_menu.addItem("4","Send Video")
 main_menu.addItem("5","Select Video")
 main_menu.addItem("6","Play/Pause")
 main_menu.addItem("7","View/Edit Config")
-main_menu.addItem("8","Quit")
+main_menu.addItem("0","Quit")
 console.registerModule(main_menu,height=100)
 
 #
@@ -144,6 +144,10 @@ def initConfig():
             'IP' : '',
             'Port': ''
         }
+
+        config['User'] = {
+            'Username': "Anonymous"
+        }
         
         config.sync()
 
@@ -175,7 +179,8 @@ def configMenu():
         config_menu.addItem("2","Default Server Port: {0}".format(config['Server']['Port']))
         config_menu.addItem("3","Default Connect Host: {0}".format(config['Client']['IP']))
         config_menu.addItem("4","Default Connect Port: {0}".format(config['Client']['Port']))
-        config_menu.addItem("5","Back")
+        config_menu.addItem("5","Username: {0}".format(config['User']['Username']))
+        config_menu.addItem("0","Back")
         console.registerModule(config_menu,height=100)
 
         console.draw()
@@ -207,6 +212,11 @@ def configMenu():
             config.sync()
 
         elif inp == 5:
+            new_default = input("New Username: ")
+            config['User']['Username'] = new_default
+            config.sync()
+
+        elif inp == 0:
             return
 
 
@@ -679,7 +689,7 @@ def menu():
         elif selection == 7:
             configMenu()
 
-        elif selection == 8:
+        elif selection == 0:
             print("Exiting, bye!")
             exit(0)
 

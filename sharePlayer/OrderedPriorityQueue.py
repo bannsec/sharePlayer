@@ -10,7 +10,7 @@ class OrderedPriorityQueue(queue.PriorityQueue):
         self._count = 0
 
         # Call the constructor
-        queue.PriorityQueue.__init__(self)
+        queue.PriorityQueue.__init__(self,maxsize=maxsize)
 
     def put(self,msg,priority):
         """

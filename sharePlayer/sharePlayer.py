@@ -95,7 +95,7 @@ video = mplayer.Player()
 
 # TODO: This is set up for a single viewing party right now
 # Need to update it if we want more than 2 people viewing at the same time
-sendQueue = OrderedPriorityQueue(maxsize=100) # queue.PriorityQueue(maxsize=100)
+sendQueue = OrderedPriorityQueue(maxsize=10) # queue.PriorityQueue(maxsize=100)
 recvQueue = queue.Queue()
 
 #
@@ -362,6 +362,7 @@ def handle_client(client_reader, client_writer):
             client_writer.write(struct.pack("<I",len(send)))
             # Then send the message itself
             client_writer.write(send)
+            yield from client_writer.drain()
             sendQueue.task_done()
         except queue.Empty:
             pass
@@ -461,6 +462,7 @@ def handle_client_connection(host, port):
             client_writer.write(struct.pack("<I",len(command)))
             # Then send the command
             client_writer.write(command)
+            yield from client_writer.drain()
             sendQueue.task_done()
         except queue.Empty:
             # Not a big deal if there isn't anything to send

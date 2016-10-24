@@ -12,7 +12,6 @@ import concurrent
 import argparse
 import shutil
 import os
-import mplayer
 import subprocess
 import base64
 import dill
@@ -21,6 +20,7 @@ import configparser
 import appdirs
 from time import sleep
 
+from sharePlayer.player.MPlayer import MPlayer
 
 from sharePlayer.ui.console import ConsoleUI
 from sharePlayer.modules.chat import Chat
@@ -91,7 +91,7 @@ log = logging.getLogger("sharePlayer")
 DIR=os.path.dirname(os.path.realpath(__file__))
 VIDEODIR = os.path.join(DIR,"Videos")
 os.makedirs(VIDEODIR,exist_ok=True)
-video = mplayer.Player()
+player = MPlayer()
 
 # TODO: This is set up for a single viewing party right now
 # Need to update it if we want more than 2 people viewing at the same time
@@ -592,11 +592,14 @@ def manageRecvQueue():
         elif msg['type'].lower() == 'load':
             # Loading only the base name for now
             fileName = os.path.basename(msg['fileName'])
-            video.loadfile(os.path.join(VIDEODIR,fileName))
+            player.loadfile(os.path.join(VIDEODIR,fileName))
 
 
         elif msg['type'].lower() == 'pause':
-            video.pause()
+            player.pause()
+
+        elif msg['type'].lower() == "play":
+            player.play()
 
         elif msg['type'].lower() == "filetransfer":
             # TODO: Opening and closing the file this many times is VERY inefficient
@@ -615,18 +618,18 @@ def manageRecvQueue():
                 f.write(msg['data'])
 
         elif msg['type'].lower() == 'time_pos':
-            video.time_pos = msg['pos']
+            player.seek(msg['pos'])
 
         recvQueue.task_done()
 
 
 def selectVideo(fileName=None):
-    global video, sendQueueCounter
+    global player, sendQueueCounter
 
     if fileName == None:
         fileName = input("Video Name> ")
 
-    video.loadfile(os.path.join(VIDEODIR,fileName))
+    player.loadfile(os.path.join(VIDEODIR,fileName))
     
     sendQueue.put(priority=PRIORITY_COMMAND,msg=dill.dumps({
         'type': 'load',
@@ -635,21 +638,33 @@ def selectVideo(fileName=None):
 
 
 def playPause():
-    global video, sendQueueCounter
+    global player, sendQueueCounter
 
-    video.pause()
+    # Figure out our current state, then  do the opposite
 
-    sendQueue.put(priority=PRIORITY_COMMAND,msg=dill.dumps({
-        'type': 'pause'
-        }))
-
-    # If we just pased it, sync everyone together
-    if video.paused:
+    # If we're paused, then play
+    if player.isPaused():
+        player.play()
+        
         sendQueue.put(priority=PRIORITY_COMMAND,msg=dill.dumps({
-            'type': 'time_pos',
-            'pos': video.time_pos
-        }))
-        video.time_pos = video.time_pos
+            'type': 'play'
+            }))
+
+    # If we're playing, then pause
+    else:
+        player.pause()
+
+        sendQueue.put(priority=PRIORITY_COMMAND,msg=dill.dumps({
+            'type': 'pause'
+            }))
+
+        # If we just pased it, sync everyone together
+        if player.isPaused():
+            sendQueue.put(priority=PRIORITY_COMMAND,msg=dill.dumps({
+                'type': 'time_pos',
+                'pos': player.curTime()
+            }))
+            player.seek(player.curTime())
 
 
 
@@ -705,12 +720,12 @@ def videoMonitor():
     Watches for changes in the video's state. I.e.: if you paused
     Not really using this for now... Kinda hard to implement correctly
     """
-    state = video.paused
-    state = video.paused
+    state = player.isPaused()
+    state = player.isPaused()
     
     while True:
 
-        newState = video.paused
+        newState = player.isPaused()
         
         if newState != state:
             state = newState

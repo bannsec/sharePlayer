@@ -83,7 +83,7 @@ console.registerModule(text,height=100)
 
 
 LIMIT=8*1024*1024 # streams read and write buffer size, might not actually need this anymore...
-SENDSIZE=4*1024*1024 # The size of chunks of data to use when sending a file
+SENDSIZE=1*1024*1024 # The size of chunks of data to use when sending a file. 1MB at a time
 
 clients = {} # task -> (reader, writer)
 log = logging.getLogger("sharePlayer")
@@ -542,11 +542,11 @@ def sendFile(fileName):
     bar = progressbar.ProgressBar(widgets=[
         ' [', progressbar.Percentage(), '] ',
         progressbar.Bar(),
-        ' (', progressbar.ETA(), ') ',
+        ' (', progressbar.ETA(), ', ', progressbar.AdaptiveTransferSpeed(), ') ',
     ],max_value=fileSize)
 
     with open(filePath,"rb") as f:
-        data = f.read(SENDSIZE) # 4MB at a time
+        data = f.read(SENDSIZE) 
         totalRead = len(data)
         
         # So long as we're reading data, send it

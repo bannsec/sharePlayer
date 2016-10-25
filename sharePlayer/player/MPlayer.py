@@ -31,7 +31,45 @@ class MPlayer(BasePlayer):
         return True
 
     def seek(self,pos):
-        self._player.time_pos = pos
+        """
+        Attempt to seek to the given position.
+        Returns the ACTUAL position seek'd to. This is due to needing to be on keyframes
+        """
+        # See if we're already there
+        if abs(self._player.time_pos - pos) < 0.5:
+            return self._player.time_pos
+
+        
+        # Find the previous frame
+        self._player.seek(pos,2)
+        self.play()
+        self.pause()
+        
+        # If we're at the correct place now, return
+        if abs(self._player.time_pos - pos) < 0.5:
+            return self._player.time_pos
+
+        # Got some differences here. Let's find the last keyframe
+        oldKeyFrame = self._player.time_pos
+        keyFrame = oldKeyFrame
+        
+        # Find our way back to the previous
+        while oldKeyFrame == keyFrame:
+            # Remove a second
+            pos -= 1
+            
+            self._player.seek(pos,2)
+            self.play()
+            self.pause()
+
+            keyFrame = self._player.time_pos
+
+        # Found it. Return it
+        return keyFrame
+            
+
+        
+        
 
     def isPaused(self):
         return self._player.paused

@@ -20,7 +20,9 @@ import configparser
 import appdirs
 from time import sleep
 
+# The players
 from sharePlayer.player.MPlayer import MPlayer
+from sharePlayer.player.ChromeCast import ChromeCast
 
 from sharePlayer.ui.console import ConsoleUI
 from sharePlayer.modules.chat import Chat
@@ -67,6 +69,7 @@ main_menu.addItem("4","Send Video")
 main_menu.addItem("5","Select Video")
 main_menu.addItem("6","Play/Pause")
 main_menu.addItem("7","View/Edit Config")
+main_menu.addItem("8","Use ChromeCast")
 main_menu.addItem("0","Quit")
 console.registerModule(main_menu,height=100)
 
@@ -618,7 +621,14 @@ def manageRecvQueue():
                 f.write(msg['data'])
 
         elif msg['type'].lower() == 'time_pos':
-            player.seek(msg['pos'])
+            actual_time = player.seek(msg['pos'])
+            
+            # Check if we need to send an update out with a more accurate time
+            if abs(actual_time - msg['pos']) > 0.5:
+                sendQueue.put(priority=PRIORITY_COMMAND,msg=dill.dumps({
+                    'type': 'time_pos',
+                    'pos': actual_time
+                    }))
 
         recvQueue.task_done()
 
@@ -644,11 +654,12 @@ def playPause():
 
     # If we're paused, then play
     if player.isPaused():
-        player.play()
         
         sendQueue.put(priority=PRIORITY_COMMAND,msg=dill.dumps({
             'type': 'play'
             }))
+
+        player.play()
 
     # If we're playing, then pause
     else:
@@ -658,17 +669,23 @@ def playPause():
             'type': 'pause'
             }))
 
-        # If we just pased it, sync everyone together
-        if player.isPaused():
-            sendQueue.put(priority=PRIORITY_COMMAND,msg=dill.dumps({
-                'type': 'time_pos',
-                'pos': player.curTime()
+
+        # If we just paused it, sync everyone together
+        # Note a little race condition here. The player may take a second to sync back with us. Let's give it a sec..
+        sleep(1)
+
+        # Time to sync to
+        to_time = player.curTime()
+
+        sendQueue.put(priority=PRIORITY_COMMAND,msg=dill.dumps({
+            'type': 'time_pos',
+            'pos': to_time
             }))
-            player.seek(player.curTime())
 
 
 
 def menu():
+    global player
     
     while True:
         # Need to set them here due to returning from functions
@@ -710,6 +727,16 @@ def menu():
 
         elif selection == 7:
             configMenu()
+
+        # TODO: This should be somewhere else. Putting it in main menu just for now.
+        elif selection == 8:
+            # Instantiate the ChromeCast player object
+            player = ChromeCast()
+            # Have user select an appropriate player
+            player.selectCast()
+            # TODO: Indicator of what player you're using
+            # TODO: Sanity checking here...
+            # TODO: Allow default?
 
         elif selection == 0:
             print("Exiting, bye!")

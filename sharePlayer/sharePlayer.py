@@ -98,7 +98,7 @@ player = MPlayer()
 
 # TODO: This is set up for a single viewing party right now
 # Need to update it if we want more than 2 people viewing at the same time
-sendQueue = OrderedPriorityQueue(maxsize=10) # queue.PriorityQueue(maxsize=100)
+sendQueue = OrderedPriorityQueue(maxsize=10)
 recvQueue = queue.Queue()
 
 #
@@ -278,11 +278,12 @@ def accept_client(client_reader, client_writer):
         host,port = client_writer.get_extra_info('peername')
         client_writer.close()
         # Sending Faux Message to our Queue
-        recvQueue.put(encrypt(dill.dumps({
+        # TODO: Figure out correct connid
+        recvQueue.put((-1,encrypt(dill.dumps({
             'type': 'disconnected',
             'host': host,
             'port': port,
-            'success': True})))
+            'success': True}))))
 
     task.add_done_callback(client_done)
 
@@ -312,11 +313,12 @@ def handle_client(client_reader, client_writer):
         # happened if we hit here
         host,port = client_writer.get_extra_info('peername')
         # Sending Faux Message to our Queue
-        recvQueue.put(encrypt(dill.dumps({
+        # TODO: Figure out real connid
+        recvQueue.put((-1,encrypt(dill.dumps({
             'type': 'connected',
             'host': host,
             'port': port,
-            'success': False})))
+            'success': False}))))
         return
 
     size = struct.unpack("<I",size)[0]
@@ -392,7 +394,7 @@ def make_connection(host, port):
 
         # Sending Faux Message to our Queue
         # TODO: Mocking the connection ID for now
-        recvQueue.put((0,encrypt(dill.dumps({
+        recvQueue.put((-1,encrypt(dill.dumps({
             'type': 'disconnected',
             'host': host,
             'port': port,

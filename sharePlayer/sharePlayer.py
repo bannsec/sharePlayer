@@ -150,7 +150,11 @@ def initConfig():
         }
 
         config['User'] = {
-            'Username': "Anonymous"
+            'Username': 'Anonymous'
+        }
+
+        config['Options'] = {
+            'notify_volume': '100'
         }
         
         config.sync()
@@ -184,6 +188,7 @@ def configMenu():
         config_menu.addItem("3","Default Connect Host: {0}".format(config['Client']['IP']))
         config_menu.addItem("4","Default Connect Port: {0}".format(config['Client']['Port']))
         config_menu.addItem("5","Username: {0}".format(config['User']['Username']))
+        config_menu.addItem("6","Notify Volume: {0}".format(config['Options']['notify_volume']))
         config_menu.addItem("0","Back")
         console.registerModule(config_menu,height=100)
 
@@ -218,6 +223,11 @@ def configMenu():
         elif inp == 5:
             new_default = input("New Username: ")
             config['User']['Username'] = new_default
+            config.sync()
+
+        elif inp == 6:
+            new_default = input("Notification Sound Volume (0-100): ")
+            config['Options']['notify_volume'] = new_default
             config.sync()
 
         elif inp == 0:
@@ -583,7 +593,7 @@ def manageRecvQueue():
         # Figure out what to do with this message
 
         if msg['type'].lower() == 'chat':
-            subprocess.check_output(["mplayer",os.path.join(DIR,"notifications","just-like-that.mp3")],stderr=subprocess.STDOUT)
+            subprocess.check_output(["mplayer","-volume",config['Options']['notify_volume'],os.path.join(DIR,"notifications","just-like-that.mp3")],stderr=subprocess.STDOUT)
             chat.addMessage("{0}> {1}".format(msg['username'],msg['msg']))
 
         elif msg['type'].lower() == 'connected':

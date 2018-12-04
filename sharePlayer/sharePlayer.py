@@ -24,16 +24,12 @@ from time import sleep
 from sharePlayer.player.MPlayer import MPlayer
 from sharePlayer.player.ChromeCast import ChromeCast
 
-from sharePlayer.ui.console import ConsoleUI
-from sharePlayer.modules.chat import Chat
-from sharePlayer.modules.banner import Banner
-from sharePlayer.modules.connected import Connected
-from sharePlayer.modules.menu import Menu
-from sharePlayer.modules.text import Text
-
 from sharePlayer.OrderedPriorityQueue import OrderedPriorityQueue
 
+from .ui import UI
 
+
+"""
 ##################
 # Initializing UI
 #####################
@@ -82,8 +78,10 @@ console.createView("GetPassword")
 console.setActiveView("GetPassword")
 console.registerModule(Banner(),height=20)
 console.registerModule(text,height=100)
+"""
 
-
+ui = UI()
+ui.run()
 
 LIMIT=8*1024*1024 # streams read and write buffer size, might not actually need this anymore...
 SENDSIZE=1*1024*1024 # The size of chunks of data to use when sending a file. 1MB at a time

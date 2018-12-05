@@ -24,6 +24,7 @@ palette = [
 class UI(object):
 
     def __init__(self):
+        self.popup_input_widget = None
         self.full_draw()
 
     def full_draw(self):
@@ -36,12 +37,15 @@ class UI(object):
         #self.frame_body = urwid.LineBox(urwid.Filler(urwid.Text("test", wrap="space")), title='Main')
         #self.menu_box = urwid.LineBox( urwid.Text('blerg', align='left'), title='Menu')
 
-        self.menu_widget = urwid.Text('blerg', align='left')
-        self.menu_box = urwid.LineBox(urwid.Filler(urwid.Padding(self.menu_widget,width=self.menu_widget.pack()[0]), valign='top'), title="Menu")
-        #self.menu_box = urwid.LineBox(urwid.Filler(urwid.Padding(urwid.Text('blerg', align='left'), width=20)), menu='Menu')
+        self.menu_widgets = [
+                urwid.Text('blerg', align='left'),
+                urwid.Text('blerg2', align='left'),
+                ]
+        self.menu_widgets = [urwid.AttrMap(widget, 'username', 'panels_background') for widget in self.menu_widgets]
 
-        #self.chat_widget = urwid.Text('blerg2', align='left')
-        #self.chat_box =  urwid.LineBox(urwid.Filler(urwid.Padding(self.chat_widget, width='pack'), valign='bottom'), title="Chat")
+        #self.menu_box = urwid.LineBox(urwid.Filler(urwid.Padding(self.menu_widget,width=self.menu_widget.pack()[0]), valign='top'), title="Menu")
+        self.menu_box = urwid.LineBox(urwid.ListBox(self.menu_widgets), title='Menu')
+
         self.chat_box = urwid.LineBox(ChatMessages(), title='Chat')
         self.input_widget = urwid.Edit(caption='> ', multiline=False)
 
@@ -60,7 +64,7 @@ class UI(object):
                     'panels_background'),
                 title="Right")
         
-        self.frame_body = urwid.Columns([(self.menu_widget.pack()[0] + 5, self.menu_box), self.middle_box, (40, self.right_box)], dividechars=0, focus_column=1)
+        self.frame_body = urwid.Columns([(self.menu_widgets[0].pack()[0] + 5, self.menu_box), self.middle_box, (40, self.right_box)], dividechars=0, focus_column=1)
 
         self.frame = urwid.Frame(body=self.frame_body, header=self.frame_header, footer=self.frame_footer, focus_part='body')
         self.loop = urwid.MainLoop(urwid.AttrMap(self.frame, 'frame_background'), palette=palette, unhandled_input=self._unhandled_input)
@@ -75,6 +79,13 @@ class UI(object):
         self.loop.run()
 
     def _unhandled_input(self, key):
+        # Is this the overlay prompt?
+        if isinstance(self.loop.widget, urwid.container.Overlay):
+            focus_list = self.loop.widget.get_focus_widgets()
+        # Base frame
+        else:
+            focus_list = self.frame.get_focus_widgets()
+
         if key in ('q', 'Q'):
             raise urwid.ExitMainLoop()
 
@@ -83,26 +94,40 @@ class UI(object):
             IPython.embed()
             self.loop.run()
 
-        # self.popup_prompt('Whats up doc?', callback=cb, linebox_options={'title': 'blerg'})
+        elif key == 'f2':
+            def cb(inp):
+                self.chat_box.base_widget.add(inp)
+            self.popup_prompt('Whats up doc?', callback=cb, linebox_options={'title': 'blerg'})
 
         elif key == 'enter':
 
-            # Is this the overlay prompt?
-            if isinstance(self.loop.widget, urwid.container.Overlay):
-                widget = self.loop.widget.get_focus_widgets()[-1]
-            # Base frame
-            else:
-                widget = self.frame.get_focus_widgets()[-1]
-
-            if isinstance(widget, urwid.graphics.LineBox):
+            if isinstance(focus_list[-1], urwid.graphics.LineBox):
                 
                 # Was someone typing into the chat box?
-                if widget.base_widget is self.input_widget:
+                if focus_list[-1].base_widget is self.input_widget:
                     self._handle_chat_enter()
 
-            elif hasattr(widget,'base_widget') and widget.base_widget is self.popup_input_widget:
+            elif hasattr(focus_list[-1],'base_widget') and focus_list[-1].base_widget is self.popup_input_widget:
                 self._handle_popup_input_enter()
 
+        elif key == "down":
+
+            # Take care of changing the focus of the menu widgets
+            if focus_list[-1] in self.menu_widgets:
+                listbox = focus_list[-2].base_widget
+                new_pos = listbox.focus_position + 1 if listbox.focus_position < len(listbox.body) - 1 else listbox.focus_position
+                listbox.set_focus(new_pos)
+
+        elif key == "up":
+
+            # Take care of changing the focus of the menu widgets
+            if focus_list[-1] in self.menu_widgets:
+                listbox = focus_list[-2].base_widget
+                new_pos = listbox.focus_position - 1 if listbox.focus_position != 0 else 0
+                listbox.set_focus(new_pos)
+
+        else:
+            print("uncaught: " + key)
 
     def _handle_chat_enter(self):
         """This is called when someone presses enter in the chat edit box. Presumably to send a message."""

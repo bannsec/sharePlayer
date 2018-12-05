@@ -17,7 +17,8 @@ banner = """  ___ / /  ___ ________ / _ \/ /__ ___ _____ ____
 
 # http://urwid.org/manual/displayattributes.html
 palette = [
-    ('username', 'black', 'light gray'),
+    ('username', 'light gray', 'dark gray'),
+    ('username_bold', 'light green', 'dark gray'),
     ('frame_background', 'white', 'dark gray'),
     ('panels_background', 'white', 'dark gray'), # Match frame for now
     ('menu_item_selected', 'white', 'dark gray'),
@@ -163,8 +164,8 @@ class UI(object):
                 new_pos = listbox.focus_position - 1 if listbox.focus_position != 0 else 0
                 listbox.set_focus(new_pos)
 
-        else:
-            print("uncaught: " + key)
+        #else:
+        #    print("uncaught: " + key)
 
     def _handle_menu_widget(self):
         """Someone pressed enter on a menu item."""
@@ -187,7 +188,7 @@ class UI(object):
         
         # Add to the chat log
         if text != '':
-            self.chat_box.base_widget.add(text)
+            self.chat_box.base_widget.add(text, "me")
 
     def _handle_popup_input_enter(self):
         """Called when someone hits enter in the popup window."""

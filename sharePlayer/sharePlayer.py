@@ -81,7 +81,6 @@ console.registerModule(text,height=100)
 """
 
 ui = UI()
-ui.run()
 
 LIMIT=8*1024*1024 # streams read and write buffer size, might not actually need this anymore...
 SENDSIZE=1*1024*1024 # The size of chunks of data to use when sending a file. 1MB at a time

@@ -2,6 +2,8 @@ import logging
 logger = logging.getLogger("sharePlayer:UI")
 
 import urwid
+import random
+import string
 
 from .scroll import ScrollBar, Scrollable
 from .Chat import ChatMessages
@@ -18,14 +20,29 @@ palette = [
     ('username', 'black', 'light gray'),
     ('frame_background', 'white', 'dark gray'),
     ('panels_background', 'white', 'dark gray'), # Match frame for now
+    ('menu_item_selected', 'white', 'dark gray'),
+    ('menu_item_unselected', 'light gray', 'dark gray'),
     #('panels_background', 'black', 'light gray'),
     ]
+
+MENU_ITEM_QUIT = 'Quit'
 
 class UI(object):
 
     def __init__(self):
         self.popup_input_widget = None
+
+        # Draw the base screen
         self.full_draw()
+
+        # Prompt initially for key
+        random_key = ''.join(random.choice(string.ascii_letters + string.ascii_lowercase + string.ascii_uppercase) for _ in range(12))
+        self.popup_prompt('Set your password. This is a secret that you will share with anyone who you are sharing your viewing experience with. It can be anything, but you want to ensure that it is a password that is not easily guessable. >All< of your traffic will be encrypted using a strong authenticated cipher with this key.\n', callback=self._set_secret_key, linebox_options={'title': 'Shared Key'}, edit_options={'caption': 'key: ', 'edit_text': random_key, 'align': 'center'})
+        self.loop.run()
+
+    def _set_secret_key(self, key):
+        self._secret_key = key
+        self.redraw()
 
     def full_draw(self):
         """Fully recreate and re-draw the screen."""
@@ -37,14 +54,21 @@ class UI(object):
         #self.frame_body = urwid.LineBox(urwid.Filler(urwid.Text("test", wrap="space")), title='Main')
         #self.menu_box = urwid.LineBox( urwid.Text('blerg', align='left'), title='Menu')
 
+        #
+        # Menu
+        #
+
         self.menu_widgets = [
-                urwid.Text('blerg', align='left'),
-                urwid.Text('blerg2', align='left'),
+                urwid.Text(MENU_ITEM_QUIT, align='left'),
                 ]
-        self.menu_widgets = [urwid.AttrMap(widget, 'username', 'panels_background') for widget in self.menu_widgets]
+        self.menu_widgets = [urwid.AttrMap(widget, 'menu_item_unselected', 'menu_item_selected') for widget in self.menu_widgets]
 
         #self.menu_box = urwid.LineBox(urwid.Filler(urwid.Padding(self.menu_widget,width=self.menu_widget.pack()[0]), valign='top'), title="Menu")
         self.menu_box = urwid.LineBox(urwid.ListBox(self.menu_widgets), title='Menu')
+
+        #
+        # Chat
+        #
 
         self.chat_box = urwid.LineBox(ChatMessages(), title='Chat')
         self.input_widget = urwid.Edit(caption='> ', multiline=False)
@@ -52,6 +76,10 @@ class UI(object):
         self.input_box = urwid.LineBox(urwid.Filler(self.input_widget, valign='bottom', height='pack'))
 
         self.middle_box = urwid.Pile([self.chat_box, (3, self.input_box)], focus_item=1)
+
+        #
+        # Right box
+        # 
 
         # The far right box, containing whose logged in, and other status sub-boxes
         self.right_box = urwid.LineBox(
@@ -64,11 +92,10 @@ class UI(object):
                     'panels_background'),
                 title="Right")
         
-        self.frame_body = urwid.Columns([(self.menu_widgets[0].pack()[0] + 5, self.menu_box), self.middle_box, (40, self.right_box)], dividechars=0, focus_column=1)
+        self.frame_body = urwid.Columns([(max(x.pack()[0] for x in self.menu_widgets) + 5, self.menu_box), self.middle_box, (40, self.right_box)], dividechars=0, focus_column=1)
 
         self.frame = urwid.Frame(body=self.frame_body, header=self.frame_header, footer=self.frame_footer, focus_part='body')
         self.loop = urwid.MainLoop(urwid.AttrMap(self.frame, 'frame_background'), palette=palette, unhandled_input=self._unhandled_input)
-        self.loop.run()
 
     def redraw(self):
         """Just reassign the base classes to the loop."""
@@ -78,13 +105,17 @@ class UI(object):
     def run(self):
         self.loop.run()
 
-    def _unhandled_input(self, key):
+    def _get_focus_list(self):
+        """list: General helper to grab the focus list regardless of if the overlay is opened or not."""
         # Is this the overlay prompt?
         if isinstance(self.loop.widget, urwid.container.Overlay):
-            focus_list = self.loop.widget.get_focus_widgets()
+            return self.loop.widget.get_focus_widgets()
         # Base frame
         else:
-            focus_list = self.frame.get_focus_widgets()
+            return self.frame.get_focus_widgets()
+
+    def _unhandled_input(self, key):
+        focus_list = self._get_focus_list()
 
         if key in ('q', 'Q'):
             raise urwid.ExitMainLoop()
@@ -101,14 +132,20 @@ class UI(object):
 
         elif key == 'enter':
 
-            if isinstance(focus_list[-1], urwid.graphics.LineBox):
+            # Selecting a menu item
+            if focus_list[-1] in self.menu_widgets:
+                self._handle_menu_widget()
+
+            elif hasattr(focus_list[-1], 'base_widget'):
                 
                 # Was someone typing into the chat box?
                 if focus_list[-1].base_widget is self.input_widget:
                     self._handle_chat_enter()
 
-            elif hasattr(focus_list[-1],'base_widget') and focus_list[-1].base_widget is self.popup_input_widget:
-                self._handle_popup_input_enter()
+                # Handle popup input enter
+                elif focus_list[-1].base_widget is self.popup_input_widget:
+                    self._handle_popup_input_enter()
+
 
         elif key == "down":
 
@@ -128,6 +165,16 @@ class UI(object):
 
         else:
             print("uncaught: " + key)
+
+    def _handle_menu_widget(self):
+        """Someone pressed enter on a menu item."""
+        focus_list = self._get_focus_list()
+
+        selection = focus_list[-1].base_widget.get_text()[0]
+        
+        if selection == MENU_ITEM_QUIT:
+            raise urwid.ExitMainLoop()
+        
 
     def _handle_chat_enter(self):
         """This is called when someone presses enter in the chat edit box. Presumably to send a message."""
@@ -168,17 +215,15 @@ class UI(object):
         if 'align' not in text_options:
             text_options['align'] = 'center'
 
-        #popup = urwid.LineBox(urwid.Filler(urwid.Padding(urwid.Text(text))), title=title)
-        popup_prompt = urwid.Filler(urwid.Padding(urwid.Text(text, **text_options)))
-        
+        popup_prompt = urwid.Padding(urwid.Text(text, **text_options), width='pack')
         self.popup_input_widget = urwid.Edit(multiline=False, **edit_options)
         
-        popup = urwid.Pile([popup_prompt, urwid.Filler(self.popup_input_widget)], focus_item=1)
+        popup = urwid.Pile([('pack', popup_prompt), urwid.BoxAdapter(urwid.Filler(self.popup_input_widget), height=1)], focus_item=1)
         popup = urwid.LineBox(popup, **linebox_options)
         popup = urwid.AttrMap(popup, 'panels_background')
-
+        
         self.loop.widget = urwid.Overlay(
             popup, self.loop.widget,
             align=("relative", 50),
             valign=("relative",  50),
-            width=("relative", 40), height=6) 
+            width=("relative", 40), height='pack')

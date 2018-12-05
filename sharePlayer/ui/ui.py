@@ -13,8 +13,12 @@ banner = """  ___ / /  ___ ________ / _ \/ /__ ___ _____ ____
  /___/_//_/\_,_/_/  \__/_/  /_/\_,_/\_, /\__/_/   
                                    /___/          {0}""".format(url)
 
+# http://urwid.org/manual/displayattributes.html
 palette = [
     ('username', 'black', 'light gray'),
+    ('frame_background', 'white', 'dark gray'),
+    ('panels_background', 'white', 'dark gray'), # Match frame for now
+    #('panels_background', 'black', 'light gray'),
     ]
 
 class UI(object):
@@ -46,14 +50,25 @@ class UI(object):
         self.middle_box = urwid.Pile([self.chat_box, (3, self.input_box)], focus_item=1)
 
         # The far right box, containing whose logged in, and other status sub-boxes
-        self.right_box = urwid.LineBox(urwid.Filler(urwid.Padding(urwid.Text('rightbox', align='left'),width='pack'), valign='top'), title="Right")
+        self.right_box = urwid.LineBox(
+                urwid.AttrMap(
+                    urwid.Filler(
+                        urwid.Padding(
+                            urwid.Text('rightbox', align='left'),
+                            width='pack'),
+                        valign='top'),
+                    'panels_background'),
+                title="Right")
         
         self.frame_body = urwid.Columns([(self.menu_widget.pack()[0] + 5, self.menu_box), self.middle_box, (40, self.right_box)], dividechars=0, focus_column=1)
 
         self.frame = urwid.Frame(body=self.frame_body, header=self.frame_header, footer=self.frame_footer, focus_part='body')
-        self.loop = urwid.MainLoop(self.frame, palette=palette, unhandled_input=self._unhandled_input)
-
+        self.loop = urwid.MainLoop(urwid.AttrMap(self.frame, 'frame_background'), palette=palette, unhandled_input=self._unhandled_input)
         self.loop.run()
+
+    def redraw(self):
+        """Just reassign the base classes to the loop."""
+        self.loop.widget = urwid.AttrMap(self.frame, 'frame_background')
 
 
     def run(self):
@@ -66,17 +81,28 @@ class UI(object):
         elif key == 'f1':
             import IPython
             IPython.embed()
-            self.full_draw()
-            #self.search_prompt()
+            self.loop.run()
+
+        # self.popup_prompt('Whats up doc?', callback=cb, linebox_options={'title': 'blerg'})
 
         elif key == 'enter':
-            widget = self.loop.widget.get_focus_widgets()[-1]
+
+            # Is this the overlay prompt?
+            if isinstance(self.loop.widget, urwid.container.Overlay):
+                widget = self.loop.widget.get_focus_widgets()[-1]
+            # Base frame
+            else:
+                widget = self.frame.get_focus_widgets()[-1]
 
             if isinstance(widget, urwid.graphics.LineBox):
                 
                 # Was someone typing into the chat box?
                 if widget.base_widget is self.input_widget:
                     self._handle_chat_enter()
+
+            elif hasattr(widget,'base_widget') and widget.base_widget is self.popup_input_widget:
+                self._handle_popup_input_enter()
+
 
     def _handle_chat_enter(self):
         """This is called when someone presses enter in the chat edit box. Presumably to send a message."""
@@ -90,15 +116,44 @@ class UI(object):
         # Add to the chat log
         if text != '':
             self.chat_box.base_widget.add(text)
-            
 
-    """
-    def popup_prompt(self, text, ):
-        popup = urwid.LineBox(urwid.Filler(urwid.Padding(urwid.Text("blerg"))), title='hello')
+    def _handle_popup_input_enter(self):
+        """Called when someone hits enter in the popup window."""
+        # Grab input text
+        text = self.popup_input_widget.get_edit_text()
+        self.redraw()
+        self.popup_input_callback(text)
+
+            
+    def popup_prompt(self, text, callback, text_options=None, edit_options=None, linebox_options=None):
+        """Prompt user for some text input.
+        
+        Args:
+            text (str): What text to prompt the user with
+            callback (function): Once input has been gotten, return that input to this function. callback(input)
+        """
+    
+        text_options = {} if text_options is None else text_options
+        edit_options = {} if edit_options is None else edit_options
+        linebox_options = {} if linebox_options is None else linebox_options
+
+        self.popup_input_callback = callback
+
+        # Set some defaults
+        if 'align' not in text_options:
+            text_options['align'] = 'center'
+
+        #popup = urwid.LineBox(urwid.Filler(urwid.Padding(urwid.Text(text))), title=title)
+        popup_prompt = urwid.Filler(urwid.Padding(urwid.Text(text, **text_options)))
+        
+        self.popup_input_widget = urwid.Edit(multiline=False, **edit_options)
+        
+        popup = urwid.Pile([popup_prompt, urwid.Filler(self.popup_input_widget)], focus_item=1)
+        popup = urwid.LineBox(popup, **linebox_options)
+        popup = urwid.AttrMap(popup, 'panels_background')
 
         self.loop.widget = urwid.Overlay(
             popup, self.loop.widget,
             align=("relative", 50),
             valign=("relative",  50),
             width=("relative", 40), height=6) 
-    """

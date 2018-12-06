@@ -30,8 +30,9 @@ MENU_ITEM_QUIT = 'Quit'
 
 class UI(object):
 
-    def __init__(self):
+    def __init__(self, share_player):
         self.popup_input_widget = None
+        self._share_player = share_player
 
         # Draw the base screen
         self.full_draw()
@@ -42,7 +43,7 @@ class UI(object):
         self.loop.run()
 
     def _set_secret_key(self, key):
-        self._secret_key = key
+        self._share_player._shared_key = key
         self.redraw()
 
     def full_draw(self):

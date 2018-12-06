@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 
+import logging
+logging.basicConfig(level=logging.WARN)
+logger = logging.getLogger('sharePlayer')
+
 import nacl.hash, nacl.encoding, nacl.secret, nacl.utils
 import readline
 import asyncio
-import logging
 import random
 import struct
 import threading
@@ -78,9 +81,6 @@ console.createView("GetPassword")
 console.setActiveView("GetPassword")
 console.registerModule(Banner(),height=20)
 console.registerModule(text,height=100)
-"""
-
-ui = UI()
 
 LIMIT=8*1024*1024 # streams read and write buffer size, might not actually need this anymore...
 SENDSIZE=1*1024*1024 # The size of chunks of data to use when sending a file. 1MB at a time
@@ -107,13 +107,13 @@ PRIORITY_COMMAND = 0 # Top priority for commands
 
 
 def initConfig():
-    """
+    " ""
     Sets up the config global variable
-    """
+    " ""
     def sync():
-        """
+        " ""
         Adding function to configfile to sync up
-        """
+        " ""
         with open(configFile,"w") as f:
             config.write(f)
     
@@ -161,9 +161,9 @@ def initConfig():
         config.read(configFile)
 
 def configMenu():
-    """
+    " ""
     Menu for showing current config and updating it
-    """
+    " ""
     global console
 
     while True:
@@ -250,9 +250,9 @@ def setupCrypto():
     print("Encryption Key Set")
 
 def encrypt(buf):
-    """
+    " ""
     Encrypt the buf
-    """
+    " ""
     assert type(buf) in [bytes,str]
 
     # Assuming encoding...
@@ -265,9 +265,9 @@ def encrypt(buf):
     return box.encrypt(buf, nonce)
     
 def decrypt(buf):
-    """
+    " ""
     Decrypt the buf. Returns None if decryption error.
-    """
+    " ""
     assert type(buf) in [nacl.utils.EncryptedMessage, bytes]
     
     try:
@@ -752,10 +752,10 @@ def menu():
             exit(0)
 
 def videoMonitor():
-    """
+    " ""
     Watches for changes in the video's state. I.e.: if you paused
     Not really using this for now... Kinda hard to implement correctly
-    """
+    " ""
     state = player.isPaused()
     state = player.isPaused()
     
@@ -767,9 +767,45 @@ def videoMonitor():
             state = newState
 
         sleep(0.2)
+"""
 
+class SharePlayer(object):
+
+    def __init__(self):
+
+        self._prechecks()
+
+        # Be sure to do this last in init. It will spawn off
+        self.ui = UI(self)
+
+    def _prechecks(self):
+        """Make sure the basics are installed that we need."""
+
+        # Make sure mplayer is installed and in a PATH
+        self.mplayer = shutil.which('mplayer')
+        if self.mplayer is None:
+            logger.error("mplayer is not found!")
+            exit(1)
+
+        self.stunnel = shutil.which('stunnel')
+        if self.stunnel is None:
+            logger.error('stunnel is not installed!')
+            exit(1)
+
+
+    @property
+    def _shared_key(self):
+        """str: This is the secret shared key for the connection."""
+        return self.__shared_key
+
+    @_shared_key.setter
+    def _shared_key(self, shared_key):
+        self.__shared_key = shared_key
 
 def main():
+
+    share_player = SharePlayer()
+    """
     # Pre Checks
     preChecks()
 
@@ -788,6 +824,7 @@ def main():
     t.start()
 
     menu()
+    """
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

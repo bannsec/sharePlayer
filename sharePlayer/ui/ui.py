@@ -28,6 +28,8 @@ palette = [
 
 MENU_ITEM_QUIT = 'Quit'
 MENU_ITEM_CONFIG = 'Configuration'
+MENU_ITEM_START_SERVER = 'Start Server'
+MENU_ITEM_STOP_SERVER = 'Stop Server'
 
 class UI(object):
 
@@ -39,7 +41,7 @@ class UI(object):
         self.full_draw()
 
         # Prompt initially for key
-        random_key = ''.join(random.choice(string.ascii_letters + string.ascii_lowercase + string.ascii_uppercase) for _ in range(12))
+        random_key = ''.join(random.choice(string.ascii_letters + string.ascii_lowercase + string.ascii_uppercase) for _ in range(20))
         self.popup_prompt('Set your password. This is a secret that you will share with anyone who you are sharing your viewing experience with. It can be anything, but you want to ensure that it is a password that is not easily guessable. >All< of your traffic will be encrypted using a strong authenticated cipher with this key.\n', callback=self._set_secret_key, linebox_options={'title': 'Shared Key'}, edit_options={'caption': 'key: ', 'edit_text': random_key, 'align': 'center'})
         self.loop.run()
 
@@ -63,6 +65,8 @@ class UI(object):
 
         self.menu_widgets = [
                 urwid.Text(MENU_ITEM_CONFIG, align='left'),
+                urwid.Text(MENU_ITEM_START_SERVER, align='left'),
+                urwid.Text(MENU_ITEM_STOP_SERVER, align='left'),
                 urwid.Text(MENU_ITEM_QUIT, align='left'),
                 ]
         self.menu_widgets = [urwid.AttrMap(widget, 'menu_item_unselected', 'menu_item_selected') for widget in self.menu_widgets]
@@ -181,6 +185,12 @@ class UI(object):
 
         elif selection == MENU_ITEM_CONFIG:
             MenuConfig.run_view(self)
+
+        elif selection == MENU_ITEM_START_SERVER:
+            MenuServer.start_server(self)
+
+        elif selection == MENU_ITEM_STOP_SERVER:
+            MenuServer.stop_server()
         
 
     def _handle_chat_enter(self):
@@ -236,3 +246,4 @@ class UI(object):
             width=("relative", 40), height='pack')
 
 from . import Config as MenuConfig
+from ..server import Server as MenuServer

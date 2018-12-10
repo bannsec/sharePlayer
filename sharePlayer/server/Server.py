@@ -4,6 +4,7 @@ import configparser
 import appdirs
 import os
 import pexpect
+import redis
 
 def sync():
     """
@@ -14,7 +15,7 @@ def sync():
 
 def start_server(ui):
     """Start the things necessary to be a server."""
-    global config, config_file, srv_p
+    global config, config_file, srv_p, redis_connection, redis_pubsub
 
     # Figure out where our config should be
     user_config_dir = appdirs.AppDirs("sharePlayer").user_config_dir
@@ -61,10 +62,20 @@ foreground = yes
     srv_p = subprocess.Popen(['sudo','stunnel',config_file], stderr=subprocess.PIPE)
     #srv_p = pexpect.spawn('sudo', ['stunnel', config_file])
 
+    #
+    # Connect to Redis
+    #
+
+    ui._share_player.redis_connection = redis.Redis(host=MenuConfig.config['Redis']['ip'], port=MenuConfig.config['Redis']['port'], db=0)
+    ui._share_player.redis_pubsub = ui._share_player.redis_connection.pubsub()
+
+    # Tell Chat to subscribe
+    Chat.do_subscribe(ui)
+
+
 def stop_server():
     # TODO: This doesn't really work atm..
     subprocess.run('sudo kill {}'.format(srv_p.pid), shell=True)
 
-
-
 from ..ui import Config as MenuConfig
+from ..ui import Chat

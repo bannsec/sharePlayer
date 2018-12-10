@@ -7,6 +7,7 @@ import string
 
 from .scroll import ScrollBar, Scrollable
 from .Chat import ChatMessages
+from . import Chat
 
 url = '(c) https://github.com/bannsec/sharePlayer'
 
@@ -148,7 +149,7 @@ class UI(object):
                 
                 # Was someone typing into the chat box?
                 if focus_list[-1].base_widget is self.input_widget:
-                    self._handle_chat_enter()
+                    Chat.handle_enter(self)
 
                 # Handle popup input enter
                 elif focus_list[-1].base_widget is self.popup_input_widget:
@@ -192,19 +193,6 @@ class UI(object):
         elif selection == MENU_ITEM_STOP_SERVER:
             MenuServer.stop_server()
         
-
-    def _handle_chat_enter(self):
-        """This is called when someone presses enter in the chat edit box. Presumably to send a message."""
-
-        # Grab input text
-        text = self.input_widget.get_edit_text()
-
-        # Clear it
-        self.input_widget.set_edit_text("")
-        
-        # Add to the chat log
-        if text != '':
-            self.chat_box.base_widget.add(text, MenuConfig.config['User']['username'])
 
     def _handle_popup_input_enter(self):
         """Called when someone hits enter in the popup window."""

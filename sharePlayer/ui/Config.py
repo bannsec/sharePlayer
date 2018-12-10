@@ -99,3 +99,9 @@ def submit_button(button, user_data):
     config.sync()
 
     ui.middle_box.widget_list[0] = ui.chat_box
+
+# Only init config once
+try:
+    config
+except:
+    get_config()

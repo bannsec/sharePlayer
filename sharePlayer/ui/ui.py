@@ -194,7 +194,7 @@ class UI(object):
         
         # Add to the chat log
         if text != '':
-            self.chat_box.base_widget.add(text, "me")
+            self.chat_box.base_widget.add(text, MenuConfig.config['User']['username'])
 
     def _handle_popup_input_enter(self):
         """Called when someone hits enter in the popup window."""

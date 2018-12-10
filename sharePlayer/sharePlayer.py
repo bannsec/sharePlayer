@@ -231,11 +231,6 @@ def configMenu():
             return
 
 
-def preChecks():
-    # Make sure mplayer is installed and in a PATH
-    if shutil.which("mplayer") == None:
-        log.error("mplayer is not found!")
-
 def setupCrypto():
     global key, box
     global console

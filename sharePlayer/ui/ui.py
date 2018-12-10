@@ -27,6 +27,7 @@ palette = [
     ]
 
 MENU_ITEM_QUIT = 'Quit'
+MENU_ITEM_CONFIG = 'Configuration'
 
 class UI(object):
 
@@ -61,6 +62,7 @@ class UI(object):
         #
 
         self.menu_widgets = [
+                urwid.Text(MENU_ITEM_CONFIG, align='left'),
                 urwid.Text(MENU_ITEM_QUIT, align='left'),
                 ]
         self.menu_widgets = [urwid.AttrMap(widget, 'menu_item_unselected', 'menu_item_selected') for widget in self.menu_widgets]
@@ -74,9 +76,9 @@ class UI(object):
 
         self.chat_box = urwid.LineBox(ChatMessages(), title='Chat')
         self.input_widget = urwid.Edit(caption='> ', multiline=False)
-
         self.input_box = urwid.LineBox(urwid.Filler(self.input_widget, valign='bottom', height='pack'))
 
+        # Middle box holds chat and input widgets
         self.middle_box = urwid.Pile([self.chat_box, (3, self.input_box)], focus_item=1)
 
         #
@@ -176,6 +178,9 @@ class UI(object):
         
         if selection == MENU_ITEM_QUIT:
             raise urwid.ExitMainLoop()
+
+        elif selection == MENU_ITEM_CONFIG:
+            MenuConfig.run_view(self)
         
 
     def _handle_chat_enter(self):
@@ -229,3 +234,5 @@ class UI(object):
             align=("relative", 50),
             valign=("relative",  50),
             width=("relative", 40), height='pack')
+
+from . import Config as MenuConfig

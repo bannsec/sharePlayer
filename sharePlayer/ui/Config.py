@@ -36,6 +36,11 @@ def get_config():
             'Port': '12345'
         }
 
+        config['Redis'] = {
+            'IP': '127.0.0.1',
+            'Port': '6379'
+        }
+
         config['Client'] = {
             'IP' : '',
             'Port': ''
@@ -67,6 +72,8 @@ def run_view(ui):
 
     config_cells.append(urwid.LineBox(urwid.Edit(edit_text=config['Server']['ip'], multiline=False, align='left'), title='Server IP'))
     config_cells.append(urwid.LineBox(urwid.Edit(edit_text=config['Server']['port'], multiline=False, align='left'), title='Server Port'))
+    config_cells.append(urwid.LineBox(urwid.Edit(edit_text=config['Redis']['ip'], multiline=False, align='left'), title='Redis IP'))
+    config_cells.append(urwid.LineBox(urwid.Edit(edit_text=config['Redis']['port'], multiline=False, align='left'), title='Redis Port'))
     config_cells.append(urwid.LineBox(urwid.Edit(edit_text=config['User']['username'], multiline=False, align='left'), title='Username'))
     config_cells.append(urwid.LineBox(urwid.Edit(edit_text=config['Options']['notify_volume'], multiline=False, align='left'), title='Notify Volume'))
 
@@ -76,8 +83,10 @@ def run_view(ui):
             'ui': ui,
             'server_ip': config_cells[0].base_widget,
             'server_port': config_cells[1].base_widget,
-            'username': config_cells[2].base_widget,
-            'notify_volume': config_cells[3].base_widget,
+            'redis_ip': config_cells[2].base_widget,
+            'redis_port': config_cells[3].base_widget,
+            'username': config_cells[4].base_widget,
+            'notify_volume': config_cells[5].base_widget,
             }
 
     config_submit = urwid.Button('Submit', on_press=submit_button, user_data=user_data)
@@ -94,6 +103,8 @@ def submit_button(button, user_data):
     # Save off the values
     config['Server']['ip'] = user_data['server_ip'].get_text()[0]
     config['Server']['port'] = user_data['server_port'].get_text()[0]
+    config['Redis']['ip'] = user_data['redis_ip'].get_text()[0]
+    config['Redis']['port'] = user_data['redis_port'].get_text()[0]
     config['User']['username'] = user_data['username'].get_text()[0]
     config['Options']['notify_volume'] = user_data['notify_volume'].get_text()[0]
     config.sync()

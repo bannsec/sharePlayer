@@ -29,7 +29,7 @@ def start_server(ui):
 
     config['PSK server'] = {
         'accept': MenuConfig.config['Server']['ip'] + ":" + MenuConfig.config['Server']['port'],
-        'connect': '127.0.0.1:6379',
+        'connect': MenuConfig.config['Redis']['ip'] + ":" + MenuConfig.config['Redis']['port'],
         'ciphers': 'PSK',
         'PSKsecrets': psk_file,
     }

@@ -44,6 +44,7 @@ def start_server(ui):
         f.seek(0,0)
         f.write("""compression = deflate
 foreground = yes
+syslog = no
 pid = {pid}
 ; setuid = nobody
 ; setgid = nogroup\n\n""".format(pid=pid_file) + x)
@@ -60,7 +61,8 @@ pid = {pid}
     # Start up stunnel
     #
 
-    srv_p = subprocess.Popen(['stunnel', config_file], stderr=subprocess.PIPE)
+    srv_p = subprocess.Popen(['stunnel', config_file], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stdin=subprocess.DEVNULL)
+    #srv_p = pexpect.spawn('stunnel', [config_file])
 
     #
     # Connect to Redis

@@ -60,7 +60,7 @@ def do_subscribe(ui):
 
 
     ui._share_player.redis_pubsub.subscribe(**{'Chat': handle_chat_callback})
-    t = ui._share_player.redis_pubsub.run_in_thread(sleep_time=0.001)
+    t = ui._share_player.redis_pubsub.run_in_thread(sleep_time=0.001, daemon=True)
 
 
 from . import Config as MenuConfig

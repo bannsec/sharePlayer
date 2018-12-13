@@ -5,6 +5,7 @@ import appdirs
 import os
 import pexpect
 import redis
+import atexit
 
 def sync():
     """
@@ -74,9 +75,16 @@ pid = {pid}
     # Tell Chat to subscribe
     Chat.do_subscribe(ui)
 
+    # Register to kill off server at exist
+    atexit.register(stop_server)
 
 def stop_server():
     srv_p.kill()
+
+try:
+    srv_p
+except:
+    srv_p = None
 
 from ..ui import Config as MenuConfig
 from ..ui import Chat

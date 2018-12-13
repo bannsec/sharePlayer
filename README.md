@@ -19,6 +19,22 @@ At that point, you are in your virtual environment and sharePlayer has been inst
 # Running
 To run sharePlayer, simply run the command `sharePlayer`. It's highly encouraged for you to install this into a python virtual environment, so if you did that you would want to make sure that your virtual environment is open prior to running that command.
 
+## Docker Client Run
+To run sharePlayer client inside docker, use something like:
+
+```bash
+sudo docker run -it --rm bannsec/shareplayer:rewrite_gui
+```
+
+## Docker Server Run
+To run sharePlayer inside a Docker network, use something similar to:
+
+```bash
+sudo -E $(which docker-compose) run --service-ports shareplayer; sudo -E $(which docker-compose) down
+```
+
+The above command will start up the server network, exposing 12345, then when exited will remove those containers.
+
 # Caveats
 This app is based on client/server configuration. The server in this case is you or your co-video watcher. You need to be able to set up your network in such a way that the client can get to the server. I have not implemented any UPnP type functionality yet.
 

@@ -31,6 +31,8 @@ MENU_ITEM_QUIT = 'Quit'
 MENU_ITEM_CONFIG = 'Configuration'
 MENU_ITEM_START_SERVER = 'Start Server'
 MENU_ITEM_STOP_SERVER = 'Stop Server'
+MENU_ITEM_CONNECT = 'Connect to Server'
+
 
 class UI(object):
 
@@ -68,6 +70,7 @@ class UI(object):
                 urwid.Text(MENU_ITEM_CONFIG, align='left'),
                 urwid.Text(MENU_ITEM_START_SERVER, align='left'),
                 urwid.Text(MENU_ITEM_STOP_SERVER, align='left'),
+                urwid.Text(MENU_ITEM_CONNECT, align='left'),
                 urwid.Text(MENU_ITEM_QUIT, align='left'),
                 ]
         self.menu_widgets = [urwid.AttrMap(widget, 'menu_item_unselected', 'menu_item_selected') for widget in self.menu_widgets]
@@ -192,6 +195,9 @@ class UI(object):
 
         elif selection == MENU_ITEM_STOP_SERVER:
             MenuServer.stop_server()
+
+        elif selection == MENU_ITEM_CONNECT:
+            MenuClient.connect(self)
         
 
     def _handle_popup_input_enter(self):
@@ -235,3 +241,4 @@ class UI(object):
 
 from . import Config as MenuConfig
 from ..server import Server as MenuServer
+from ..server import Client as MenuClient

@@ -1,4 +1,7 @@
 
+import logging
+logger = logging.getLogger('SharePlayer:Server:Client')
+
 import subprocess
 import configparser
 import appdirs
@@ -13,8 +16,8 @@ def sync():
     with open(config_file,"w") as f:
         config.write(f)
 
-def start_server(ui):
-    """Start the things necessary to be a server."""
+def connect(ui):
+    """Connect up!"""
     global config, config_file, srv_p, redis_connection, redis_pubsub
 
     # Figure out where our config should be
@@ -29,10 +32,10 @@ def start_server(ui):
     
     config = configparser.ConfigParser()
 
-    config['SharePlayer server'] = {
-        'accept': MenuConfig.config['Server']['ip'] + ":" + MenuConfig.config['Server']['port'],
-        'connect': MenuConfig.config['Redis']['ip'] + ":" + MenuConfig.config['Redis']['port'],
-        'ciphers': 'PSK',
+    config['SharePlayer Client'] = {
+        'client': 'yes',
+        'accept': MenuConfig.config['Redis']['ip'] + ":" + MenuConfig.config['Redis']['port'],
+        'connect': MenuConfig.config['Server']['ip'] + ":" + MenuConfig.config['Server']['port'],
         'PSKsecrets': psk_file,
     }
 
@@ -61,8 +64,7 @@ pid = {pid}
     # Start up stunnel
     #
 
-    srv_p = subprocess.Popen(['stunnel', config_file], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stdin=subprocess.DEVNULL)
-    #srv_p = pexpect.spawn('stunnel', [config_file])
+    client_p = subprocess.Popen(['stunnel', config_file], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stdin=subprocess.DEVNULL)
 
     #
     # Connect to Redis
@@ -76,7 +78,7 @@ pid = {pid}
 
 
 def stop_server():
-    srv_p.kill()
+    client_p.kill()
 
 from ..ui import Config as MenuConfig
 from ..ui import Chat

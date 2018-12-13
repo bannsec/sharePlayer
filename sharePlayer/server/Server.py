@@ -25,6 +25,7 @@ def start_server(ui):
 
     config_file = os.path.join(user_config_dir,"stunnel_config.ini")
     psk_file = os.path.join(user_config_dir,"stunnel_config.psk")
+    pid_file = os.path.join(user_config_dir,"stunnel.pid")
     
     config = configparser.ConfigParser()
 
@@ -43,8 +44,9 @@ def start_server(ui):
         f.seek(0,0)
         f.write("""compression = deflate
 foreground = yes
+pid = {pid}
 ; setuid = nobody
-; setgid = nogroup\n\n""" + x)
+; setgid = nogroup\n\n""".format(pid=pid_file) + x)
 
     #
     # Write the psk file
@@ -58,9 +60,7 @@ foreground = yes
     # Start up stunnel
     #
 
-    # TODO: This will hang the exit process since the child is higher permissions.
-    srv_p = subprocess.Popen(['sudo','stunnel',config_file], stderr=subprocess.PIPE)
-    #srv_p = pexpect.spawn('sudo', ['stunnel', config_file])
+    srv_p = subprocess.Popen(['stunnel', config_file], stderr=subprocess.PIPE)
 
     #
     # Connect to Redis
@@ -74,8 +74,7 @@ foreground = yes
 
 
 def stop_server():
-    # TODO: This doesn't really work atm..
-    subprocess.run('sudo kill {}'.format(srv_p.pid), shell=True)
+    srv_p.kill()
 
 from ..ui import Config as MenuConfig
 from ..ui import Chat

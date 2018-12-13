@@ -93,16 +93,19 @@ class UI(object):
         # Right box
         # 
 
+        self.status_box = urwid.LineBox(urwid.Padding(urwid.Text('Not Connected'), width=30), title='Status')
+        self.right_box = urwid.Pile([('pack', self.status_box)])
+
         # The far right box, containing whose logged in, and other status sub-boxes
+        """
         self.right_box = urwid.LineBox(
-                urwid.AttrMap(
-                    urwid.Filler(
-                        urwid.Padding(
-                            urwid.Text('rightbox', align='left'),
-                            width='pack'),
-                        valign='top'),
-                    'panels_background'),
+                urwid.Filler(
+                    urwid.Padding(
+                        urwid.Text('rightbox', align='left'),
+                        width='pack'),
+                    valign='top'),
                 title="Right")
+        """
         
         self.frame_body = urwid.Columns([(max(x.pack()[0] for x in self.menu_widgets) + 5, self.menu_box), self.middle_box, (40, self.right_box)], dividechars=0, focus_column=1)
 
@@ -194,7 +197,7 @@ class UI(object):
             MenuServer.start_server(self)
 
         elif selection == MENU_ITEM_STOP_SERVER:
-            MenuServer.stop_server()
+            MenuServer.stop_server(self)
 
         elif selection == MENU_ITEM_CONNECT:
             MenuClient.connect(self)

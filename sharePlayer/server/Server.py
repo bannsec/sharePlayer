@@ -76,10 +76,14 @@ pid = {pid}
     Chat.do_subscribe(ui)
 
     # Register to kill off server at exist
-    atexit.register(stop_server)
+    atexit.register(stop_server, ui)
 
-def stop_server():
+    # Update status widget
+    ui.status_box.base_widget.set_text('Serving: ' + MenuConfig.config['Server']['ip'] + ':' + MenuConfig.config['Server']['port'])
+
+def stop_server(ui):
     srv_p.kill()
+    ui.status_box.base_widget.set_text('Not Connected')
 
 try:
     srv_p

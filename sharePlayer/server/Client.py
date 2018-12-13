@@ -65,6 +65,8 @@ pid = {pid}
     #
 
     client_p = subprocess.Popen(['stunnel', config_file], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stdin=subprocess.DEVNULL)
+    # Slight race condition in setting up stunnel. Give it a head start
+    sleep(0.5)
 
     #
     # Connect to Redis
@@ -76,9 +78,13 @@ pid = {pid}
     # Tell Chat to subscribe
     Chat.do_subscribe(ui)
 
+    # Update status widget
+    ui.status_box.base_widget.set_text('Connected: ' + MenuConfig.config['Server']['ip'] + ':' + MenuConfig.config['Server']['port'])
+
 
 def stop_server():
     client_p.kill()
 
+from time import sleep
 from ..ui import Config as MenuConfig
 from ..ui import Chat

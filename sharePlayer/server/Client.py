@@ -75,6 +75,9 @@ pid = {pid}
     ui._share_player.redis_connection = redis.Redis(host=MenuConfig.config['Redis']['ip'], port=MenuConfig.config['Redis']['port'], db=0)
     ui._share_player.redis_pubsub = ui._share_player.redis_connection.pubsub()
 
+    # Make sure our name is set
+    ui._share_player.redis_connection.client_setname(MenuConfig.config['User']['username'])
+
     # Tell Chat to subscribe
     Chat.do_subscribe(ui)
 

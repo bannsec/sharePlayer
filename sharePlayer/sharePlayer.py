@@ -770,6 +770,8 @@ class SharePlayer(object):
 
         self._prechecks()
 
+        self.redis_connection = None
+
         # Be sure to do this last in init. It will spawn off
         self.ui = UI(self)
 

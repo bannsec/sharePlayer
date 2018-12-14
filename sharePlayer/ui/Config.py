@@ -109,6 +109,10 @@ def submit_button(button, user_data):
     config['Options']['notify_volume'] = user_data['notify_volume'].get_text()[0]
     config.sync()
 
+    # Update our name on redis
+    if ui._share_player.redis_connection is not None:
+        ui._share_player.redis_connection.client_setname(config['User']['username'])
+
     ui.middle_box.widget_list[0] = ui.chat_box
 
 # Only init config once

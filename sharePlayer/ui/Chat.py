@@ -62,11 +62,52 @@ def do_subscribe(ui):
     ui._share_player.redis_pubsub.subscribe(**{'Chat': handle_chat_callback})
     t = ui._share_player.redis_pubsub.run_in_thread(sleep_time=0.001, daemon=True)
 
+def monitor_for_users(ui):
+    """Poll for new users to keep the logged in users panel up to date."""
 
+    while True:
+        rebuild_connected_users(ui)
+        sleep(0.5)
+
+def rebuild_connected_users(ui):
+    """Update/rebuild the connected users panel."""
+    
+    users_box_list = []
+
+    # If we're connected to redis, loop up who is here
+    if ui._share_player.redis_connection is not None:
+        for name in sorted(list(set([x['name'] for x in ui._share_player.redis_connection.client_list() if x['cmd'] == 'subscribe']))):
+            users_box_list.append(urwid.Text(name, align='left'))
+
+    # If we're not connected, it must just be us
+    else:
+        users_box_list = [
+            urwid.Text(MenuConfig.config['User']['username'], align='left'),
+        ]
+
+    # Check if there's a difference
+    for x,y in zip(users_box_list, ui.users_box_list):
+
+        if x.get_text() != y.get_text():
+            break
+    else:
+        # Nothing changed, don't redraw
+        return
+
+    print("Different")
+
+    # Something changed, redraw
+    ui.users_box_list = users_box_list
+    ui.users_box.base_widget.widget_list = ui.users_box_list
+    print("") # This is needed for some reason to wake up the ui to redraw
+    ui.loop.draw_screen()
+
+import urwid
 from . import Config as MenuConfig
 from ..server import Server
 import json
 import collections
+from time import sleep
 
 try:
     my_chat_history

@@ -33,6 +33,7 @@ MENU_ITEM_START_SERVER = 'Start Server'
 MENU_ITEM_STOP_SERVER = 'Stop Server'
 MENU_ITEM_CONNECT = 'Connect to Server'
 
+# sorted(list(set([x['name'] for x in self._share_player.redis_connection.client_list() if x['cmd'] == 'subscribe'])))
 
 class UI(object):
 
@@ -94,23 +95,23 @@ class UI(object):
         # 
 
         self.status_box = urwid.LineBox(urwid.Padding(urwid.Text('Not Connected'), width=30), title='Status')
-        self.right_box = urwid.Pile([('pack', self.status_box)])
-
-        # The far right box, containing whose logged in, and other status sub-boxes
-        """
-        self.right_box = urwid.LineBox(
-                urwid.Filler(
-                    urwid.Padding(
-                        urwid.Text('rightbox', align='left'),
-                        width='pack'),
-                    valign='top'),
-                title="Right")
-        """
+        self.users_box_list = [
+                urwid.Text(MenuConfig.config['User']['username'], align='left'),
+                ]
+        self.users_box = urwid.LineBox(
+                urwid.Padding(urwid.Pile(self.users_box_list), width=30),
+                title='Users')
+        self.right_box = urwid.Pile([('pack', self.status_box), ('pack', self.users_box)])
         
         self.frame_body = urwid.Columns([(max(x.pack()[0] for x in self.menu_widgets) + 5, self.menu_box), self.middle_box, (40, self.right_box)], dividechars=0, focus_column=1)
 
         self.frame = urwid.Frame(body=self.frame_body, header=self.frame_header, footer=self.frame_footer, focus_part='body')
         self.loop = urwid.MainLoop(urwid.AttrMap(self.frame, 'frame_background'), palette=palette, unhandled_input=self._unhandled_input)
+
+        # Start watching for user connects
+        user_watcher = threading.Thread(target=Chat.monitor_for_users, args=(self,), daemon=True)
+        user_watcher.start()
+
 
     def redraw(self):
         """Just reassign the base classes to the loop."""
@@ -241,6 +242,8 @@ class UI(object):
             align=("relative", 50),
             valign=("relative",  50),
             width=("relative", 40), height='pack')
+
+import threading
 
 from . import Config as MenuConfig
 from ..server import Server as MenuServer

@@ -79,7 +79,7 @@ def rebuild_connected_users(ui):
     if ui._share_player.redis_connection is not None:
         # TODO: Deal with connections with no name
         for name in sorted(list(set([x['name'] for x in ui._share_player.redis_connection.client_list() if x['cmd'] == 'client']))):
-            users_box_list.append(urwid.Text(name, align='left'))
+            users_box_list.append(urwid.Text(name or '<Unknown>', align='left'))
 
     # If we're not connected, it must just be us
     else:

@@ -84,10 +84,14 @@ pid = {pid}
     # Update status widget
     ui.status_box.base_widget.set_text('Connected: ' + MenuConfig.config['Server']['ip'] + ':' + MenuConfig.config['Server']['port'])
 
+    # Register to kill off stunnel at exit
+    atexit.register(client_p.kill)
+
 
 def stop_server():
     client_p.kill()
 
+import atexit
 from time import sleep
 from ..ui import Config as MenuConfig
 from ..ui import Chat
